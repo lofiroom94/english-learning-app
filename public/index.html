@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DidiGo — Belajar Bahasa Asing, selangkah demi selangkah</title>
-<meta name="description" content="DidiGo: belajar Bahasa Inggris, Korea, dan Jepang dari A0 sampai C2 — selangkah demi selangkah.">
-<meta name="theme-color" content="#FAF6F0">
+<meta name="description" content="DidiGo: belajar Bahasa Inggris, Korea, dan Jepang dari Nol sampai Mahir — selangkah demi selangkah.">
+<meta name="theme-color" content="#F6F6FB">
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('didigo-theme')==='dark'?'dark':'light');}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -17,18 +18,16 @@
 </head>
 <body>
 <div class="shell">
-  <aside id="sidebar" aria-label="Navigasi utama"></aside>
-  <div class="main">
-    <header id="topbar"></header>
-    <main id="content" tabindex="-1"></main>
-  </div>
+  <header id="topbar"></header>
+  <main id="content" tabindex="-1"></main>
 </div>
+<aside id="sidebar" aria-label="Menu navigasi"></aside>
 <nav id="bottomnav" aria-label="Navigasi bawah ponsel"></nav>
 <div id="drawer-backdrop" hidden></div>
 <div id="tts-pop" hidden></div>
 <div id="auth-modal" hidden></div>
 <div id="toast" hidden></div>
-<span id="version-badge">DidiGo v21</span>
+<span id="version-badge">DidiGo v22</span>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>
