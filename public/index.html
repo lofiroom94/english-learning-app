@@ -3,19 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>English Learning App — Belajar Bahasa Inggris & Korea A0–C2 (v8: Tombol Dengarkan)</title>
-<meta name="description" content="Belajar Bahasa Inggris dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, dan kata hari ini. Progres dan XP tersimpan di akunmu.">
+<title>DidiGo — Belajar Bahasa Asing, selangkah demi selangkah</title>
+<meta name="description" content="DidiGo — Belajar Bahasa Asing, selangkah demi selangkah. Saat ini tersedia Bahasa Inggris & Korea dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, catatan partikel Korea, tombol Dengarkan (TTS gratis), dan kata hari ini. Progres, XP, dan streak tersimpan di akunmu.">
+<meta property="og:title" content="DidiGo">
+<meta property="og:description" content="Belajar Bahasa Asing, selangkah demi selangkah.">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="#" aria-label="English Learning App">
+    <a class="brand" href="#" aria-label="DidiGo — Belajar Bahasa Asing, selangkah demi selangkah">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 5.5C6.2 4.2 9 4 12 5.2 15 4 17.8 4.2 20 5.5v12c-2.2-1.3-5-1.5-8-.3-3-1.2-5.8-1-8 .3v-12Z" fill="#fff" opacity=".95"/><path d="M12 5.2v12" stroke="#46a302" stroke-width="1.6"/></svg>
       </span>
-      <span class="brand-name">English Learning App</span>
+      <span class="brand-text"><span class="brand-name">DidiGo</span><span class="brand-tagline">Belajar Bahasa Asing, selangkah demi selangkah</span></span>
     </a>
     <div class="lang-switch" role="group" aria-label="Pilih bahasa">
       <button id="lang-btn-en" class="lang-btn is-active" type="button">English</button>
@@ -35,7 +37,8 @@
 <main id="home-view">
   <!-- 1. HERO -->
   <section class="hero">
-    <p class="hero-eyebrow">Belajar Bahasa Inggris · A0 sampai C2</p>
+    <p class="hero-brandline"><strong>DidiGo</strong> · Belajar Bahasa Asing, selangkah demi selangkah</p>
+    <p class="hero-eyebrow" id="hero-eyebrow">Belajar Bahasa Inggris · A0 sampai C2</p>
     <h2 class="hero-title" id="hero-title">Belajar Bahasa Inggris, selangkah demi selangkah</h2>
     <p class="hero-sub" id="hero-sub">42 pelajaran berurutan dari pemula mutlak sampai sangat mahir — setiap soal, kosakata, dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.</p>
     <div class="hero-actions">
@@ -149,7 +152,7 @@
   <section class="section-block" aria-label="Dashboard Master">
     <p class="section-eyebrow">Dashboard Master</p>
     <h2 class="section-title">&#128202; Dashboard Master &mdash; Progres per Level</h2>
-    <p class="section-sub">Persentase selesai untuk Bahasa Inggris dan untuk setiap level A0 sampai C2, dihitung dari pelajaran yang sudah kamu selesaikan.</p>
+    <p class="section-sub" id="dash-sub">Persentase selesai untuk Bahasa Inggris dan untuk setiap level A0 sampai C2, dihitung dari pelajaran yang sudah kamu selesaikan.</p>
     <div id="dashboard-master" class="panel-card"></div>
   </section>
 
@@ -178,10 +181,10 @@
     <h2 class="section-title">&#128218; Bank Soal &mdash; 4 Bentuk Soal, 420 Soal</h2>
     <p class="section-sub">Setiap latihan berisi 10 soal yang dibuat dari kosakata pelajaran itu sendiri, dalam 4 bentuk berbeda &mdash; jadi soal tiap pelajaran tidak sama.</p>
     <div class="bank-grid">
-      <article class="bank-card"><h3>1. Arti Kata</h3><p>Diberikan kata Bahasa Inggris, pilih arti Bahasa Indonesianya yang tepat.</p></article>
-      <article class="bank-card"><h3>2. Kata dari Arti</h3><p>Diberikan arti Bahasa Indonesia, pilih kata Bahasa Inggrisnya yang tepat.</p></article>
+      <article class="bank-card"><h3>1. Arti Kata</h3><p id="bank-desc-1">Diberikan kata Bahasa Inggris, pilih arti Bahasa Indonesianya yang tepat.</p></article>
+      <article class="bank-card"><h3>2. Kata dari Arti</h3><p id="bank-desc-2">Diberikan arti Bahasa Indonesia, pilih kata Bahasa Inggrisnya yang tepat.</p></article>
       <article class="bank-card"><h3>3. Lengkapi Kalimat</h3><p>Isi kata yang hilang di contoh kalimat, dibantu kotak konteks dan artinya.</p></article>
-      <article class="bank-card"><h3>4. Arti Kalimat</h3><p>Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Inggris.</p></article>
+      <article class="bank-card"><h3>4. Arti Kalimat</h3><p id="bank-desc-4">Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Inggris.</p></article>
     </div>
   </section>
 
@@ -218,6 +221,142 @@
     <h2 class="section-title" id="notes-title">📝 Catatan Penting</h2>
     <p class="section-sub" id="notes-sub">Aturan dasar yang paling sering dipakai — am/is/are, do/does, sampai kenapa “a university” bukan “an university”. Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
     <div id="notes" class="notes-grid"></div>
+  </section>
+
+  <!-- v9: CATATAN PARTIKEL KOREA — hanya tampil di mode Korea -->
+  <section id="ko-partikel" class="section-block" aria-label="Partikel Korea" hidden>
+    <p class="section-eyebrow">Catatan khusus Bahasa Korea</p>
+    <h2 class="section-title">📌 Partikel Korea — Diletakkan di Mana &amp; Untuk Apa</h2>
+    <p class="section-sub">Partikel adalah kata tempel kecil yang <b>selalu menempel di belakang kata benda</b> (tanpa spasi) dan menunjukkan peran kata itu dalam kalimat: topiknya apa, subjeknya siapa, objeknya apa, di mana, kepada siapa. Di catatan ini hanya ada <b>9 partikel inti yang dipakai setiap hari</b> — hafalkan tabelnya dulu, lalu buka kartunya satu per satu.</p>
+    <div class="panel-card">
+      <h3 style="margin-top:0">🗂️ Tabel Ringkasan — 9 Partikel Inti Sehari-hari</h3>
+      <table class="particle-table">
+        <thead><tr><th>Partikel</th><th>Untuk apa</th><th>Pola cepat (kata + partikel)</th></tr></thead>
+        <tbody>
+          <tr><td><b>은/는</b></td><td>Topik kalimat — “kalau soal… / adalah”</td><td>저<b>는</b> (saya), 책<b>은</b> (buku)</td></tr>
+          <tr><td><b>이/가</b></td><td>Subjek — pelaku / info baru</td><td>비<b>가</b> (hujan), 동생<b>이</b> (adik)</td></tr>
+          <tr><td><b>을/를</b></td><td>Objek — yang dikenai kata kerja</td><td>영화<b>를</b> (film), 물<b>을</b> (air)</td></tr>
+          <tr><td><b>에</b></td><td>Di/ke tempat diam &amp; waktu (jam)</td><td>학교<b>에</b> (ke sekolah), 일곱 시<b>에</b> (jam 7)</td></tr>
+          <tr><td><b>에서</b></td><td>Di tempat kegiatan; dari</td><td>식당<b>에서</b> (di restoran), 공원<b>에서</b> (di taman)</td></tr>
+          <tr><td><b>의</b></td><td>Kepunyaan — “-nya / milik”</td><td>엄마<b>의</b> 가방 (tas ibu), 친구<b>의</b> 집 (rumah teman)</td></tr>
+          <tr><td><b>와/과</b></td><td>Dan / dengan — antar kata benda</td><td>친구<b>와</b> (dengan teman), 밥<b>과</b> (nasi dan…)</td></tr>
+          <tr><td><b>에게</b></td><td>Kepada orang</td><td>친구<b>에게</b> (kepada teman), 엄마<b>에게</b> (kepada ibu)</td></tr>
+          <tr><td><b>도</b></td><td>Juga / pun</td><td>저<b>도</b> (saya juga), 오늘<b>도</b> (hari ini pun)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-bottom:0"><b>Aturan hafalan bentuk:</b> kata berakhir KONSONAN (ada 받침 batchim) → 은 · 이 · 을 · 과. Kata berakhir VOKAL → 는 · 가 · 를 · 와. Partikel 에 · 에서 · 의 · 에게 · 도 hanya punya SATU bentuk — tidak pernah berubah, jadi paling gampang dihafal.</p>
+    </div>
+    <div class="notes-grid" style="margin-top:14px">
+      <details class="note-card particle-card">
+        <summary>은/는 — Penanda Topik (“kalau soal… / adalah”)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai TOPIK yang sedang dibicarakan — hal yang sudah dikenal atau sedang diperkenalkan. Sering terasa seperti “…adalah” atau “kalau soal…”.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda (orang, benda, atau tempat) yang jadi topik. Tidak ada spasi.</p>
+          <p><b>3) Pilih bentuknya:</b> Kata berakhir KONSONAN (ada 받침 batchim) → pakai <b>은</b>. Kata berakhir VOKAL → pakai <b>는</b>.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>저는 학생이에요.</b><br>Romanisasi: jeo-neun haksaeng-ieyo.<br>Artinya: Saya adalah seorang pelajar.<br>Pola: 저 (saya) + <b>는</b> — 저 berakhir vokal ㅓ, jadi 는.</p>
+          <p class="note-example"><b>책은 책상 위에 있어요.</b><br>Romanisasi: chaeg-eun chaeksang wie isseoyo.<br>Artinya: Bukunya ada di atas meja.<br>Pola: 책 (buku) + <b>은</b> — 책 berakhir konsonan ㄱ, jadi 은.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Jangan pakai 는 setelah konsonan (책는 ✗ → 책은 ✓). Untuk info BARU atau menjawab “siapa/apa yang…?”, pakai 이/가, bukan 은/는.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>이/가 — Penanda Subjek (pelaku / info baru)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai SUBJEK — siapa/apa yang melakukan atau mengalami sesuatu, terutama info baru atau yang ditekankan.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda yang jadi subjek kalimat.</p>
+          <p><b>3) Pilih bentuknya:</b> Kata berakhir KONSONAN → pakai <b>이</b>. Kata berakhir VOKAL → pakai <b>가</b>.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>비가 와요.</b><br>Romanisasi: bi-ga wayo.<br>Artinya: Hujan turun.<br>Pola: 비 (hujan) + <b>가</b> — 비 berakhir vokal ㅣ, jadi 가.</p>
+          <p class="note-example"><b>동생이 밥을 먹어요.</b><br>Romanisasi: dongsaeng-i babeul meogeoyo.<br>Artinya: Adik sedang makan nasi.<br>Pola: 동생 (adik) + <b>이</b> — 동생 berakhir konsonan ㅇ, jadi 이.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Sering tertukar dengan 은/는. Triknya: pertanyaan 누가/뭐가 (“siapa/apa yang…?”) selalu dijawab dengan 이/가 — 동생이 먹어요, bukan 동생은 먹어요.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>을/를 — Penanda Objek (yang dikenai pekerjaan)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai OBJEK — benda/orang yang dikenai kata kerja: yang dimakan, diminum, dilihat, dibeli, dan sebagainya.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda objek, sebelum kata kerjanya.</p>
+          <p><b>3) Pilih bentuknya:</b> Kata berakhir KONSONAN → pakai <b>을</b>. Kata berakhir VOKAL → pakai <b>를</b>.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>물을 마셔요.</b><br>Romanisasi: mur-eul masyeoyo.<br>Artinya: (Saya) minum air.<br>Pola: 물 (air) + <b>을</b> — 물 berakhir konsonan ㄹ, jadi 을.</p>
+          <p class="note-example"><b>영화를 봐요.</b><br>Romanisasi: yeonghwa-reul bwayo.<br>Artinya: (Saya) menonton film.<br>Pola: 영화 (film) + <b>를</b> — 영화 berakhir vokal ㅏ, jadi 를.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Objek hanya untuk kata kerja AKSI (먹다 makan, 마시다 minum, 보다 melihat). Untuk “ada di / pergi ke” jangan pakai 을/를 — pakai 에/에서. Dalam omongan santai partikel ini sering hilang, tapi dalam tulisan &amp; ujian wajib ditulis.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>에 — Di / Ke (tempat) &amp; Waktu (jam, hari)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Dua fungsi: (1) tujuan atau tempat keberadaan yang DIAM — “ke sekolah”, “ada di rumah”; (2) WAKTU — “jam tiga”, “hari Senin”.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda TEMPAT atau kata benda WAKTU.</p>
+          <p><b>3) Pilih bentuknya:</b> Hanya SATU bentuk: <b>에</b>. Tidak pernah berubah, setelah vokal maupun konsonan tetap 에.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>학교에 가요.</b><br>Romanisasi: hakgyo-e gayo.<br>Artinya: (Saya) pergi ke sekolah.<br>Pola: 학교 (sekolah) + <b>에</b>.</p>
+          <p class="note-example"><b>아침 일곱 시에 일어나요.</b><br>Romanisasi: achim ilgop si-e ireonayo.<br>Artinya: (Saya) bangun pukul tujuh pagi.<br>Pola: 일곱 시 (jam tujuh) + <b>에</b>.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Kata waktu seperti 오늘 (hari ini), 내일 (besok), 어제 (kemarin), 지금 (sekarang) TIDAK pakai 에: 오늘 가요 ✓, 오늘에 가요 ✗. Untuk tempat BERKEGIATAN pakai 에서, bukan 에.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>에서 — Di (tempat kegiatan) &amp; Dari</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai tempat BERLANGSUNGNYA KEGIATAN — makan DI restoran, belajar DI rumah. Juga berarti “dari” untuk titik awal keberangkatan.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda TEMPAT tempat kegiatan itu terjadi.</p>
+          <p><b>3) Pilih bentuknya:</b> Hanya SATU bentuk: <b>에서</b>. Tidak pernah berubah.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>식당에서 밥을 먹어요.</b><br>Romanisasi: sikdang-eseo babeul meogeoyo.<br>Artinya: (Saya) makan nasi di restoran.<br>Pola: 식당 (restoran) + <b>에서</b>.</p>
+          <p class="note-example"><b>공원에서 운동해요.</b><br>Romanisasi: gongwon-eseo undonghaeyo.<br>Artinya: (Saya) berolahraga di taman.<br>Pola: 공원 (taman) + <b>에서</b>.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Beda tipis dengan 에: kalau hanya “ada/tinggal” (있다, 살다) pakai 에 — 집에 있어요 (ada di rumah). Kalau ada KEGIATAN (makan, belajar, bekerja) pakai 에서 — 집에서 공부해요 (belajar di rumah).</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>의 — Kepunyaan (“-nya / milik”)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai KEPEMILIKAN — seperti “-nya” atau “milik” dalam Bahasa Indonesia: tas ibu, rumah teman.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda PEMILIK, dan diletakkan SEBELUM benda yang dimiliki.</p>
+          <p><b>3) Pilih bentuknya:</b> Hanya SATU bentuk: <b>의</b>. Dalam percakapan sehari-hari 의 diucapkan seperti “에” (e).</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>엄마의 가방이에요.</b><br>Romanisasi: eomma-e gabang-ieyo. (의 diucapkan “e”)<br>Artinya: Ini tas (milik) ibu.<br>Pola: 엄마 (ibu) + <b>의</b> + 가방 (tas).</p>
+          <p class="note-example"><b>친구의 집이 커요.</b><br>Romanisasi: chingu-ui jibi keoyo.<br>Artinya: Rumah teman besar.<br>Pola: 친구 (teman) + <b>의</b> + 집 (rumah).</p>
+          <p><b>⚠️ Jebakan pemula:</b> Urutannya TERBALIK dari Bahasa Indonesia: pemilik disebut DULUAN — 친구의 집 artinya “rumah teman”, bukan “teman rumah”. Dalam omongan santai 의 sering hilang (엄마 가방) dan tetap dimengerti.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>와/과 — Dan / Dengan (menyambung kata benda)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menyambung DUA kata benda — berarti “dan” atau “dengan”: nasi dan kimchi, pergi dengan teman.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda PERTAMA, sebelum kata benda kedua.</p>
+          <p><b>3) Pilih bentuknya:</b> Kata berakhir VOKAL → pakai <b>와</b>. Kata berakhir KONSONAN → pakai <b>과</b>. (Kebalikan urutan hafalan 은/이/을 — hati-hati!)</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>친구와 영화를 봐요.</b><br>Romanisasi: chingu-wa yeonghwareul bwayo.<br>Artinya: (Saya) menonton film dengan teman.<br>Pola: 친구 (teman) + <b>와</b> — 친구 berakhir vokal ㅜ, jadi 와.</p>
+          <p class="note-example"><b>밥과 김치를 먹어요.</b><br>Romanisasi: bap-gwa gimchireul meogeoyo.<br>Artinya: (Saya) makan nasi dan kimchi.<br>Pola: 밥 (nasi) + <b>과</b> — 밥 berakhir konsonan ㅂ, jadi 과.</p>
+          <p><b>⚠️ Jebakan pemula:</b> 와/과 HANYA menyambung kata benda. Untuk menyambung dua KALIMAT pakai 그리고 (lalu/dan). Jangan menempelkan 와/과 setelah kata kerja.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>에게 — Kepada (orang)</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Menandai PENERIMA yang berupa ORANG — memberi kepada teman, menelepon ibu, bertanya kepada guru.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda ORANG yang menerima.</p>
+          <p><b>3) Pilih bentuknya:</b> Hanya SATU bentuk: <b>에게</b>. Tidak pernah berubah.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>친구에게 선물을 줘요.</b><br>Romanisasi: chingu-ege seonmureul jwoyo.<br>Artinya: (Saya) memberi hadiah kepada teman.<br>Pola: 친구 (teman) + <b>에게</b>.</p>
+          <p class="note-example"><b>엄마에게 전화해요.</b><br>Romanisasi: eomma-ege jeonhwahaeyo.<br>Artinya: (Saya) menelepon ibu.<br>Pola: 엄마 (ibu) + <b>에게</b>.</p>
+          <p><b>⚠️ Jebakan pemula:</b> 에게 KHUSUS untuk orang (dan hewan peliharaan). Mengirim sesuatu “ke sekolah / ke rumah” pakai 에, bukan 에게. Tertukar dengan 에서 juga sering terjadi — 에서 itu tempat kegiatan, 에게 itu orang penerima.</p>
+        </div>
+      </details>
+      <details class="note-card particle-card">
+        <summary>도 — Juga</summary>
+        <div class="note-body">
+          <p><b>1) Untuk apa:</b> Berarti “juga / pun” — menambahkan orang/benda/hal lain yang sama-sama ikut: saya juga, hari ini pun.</p>
+          <p><b>2) Diletakkan di mana:</b> Menempel langsung di BELAKANG kata benda — dan MENGGANTIKAN 은/는, 이/가, 을/를 (partikel itu lepas, diganti 도).</p>
+          <p><b>3) Pilih bentuknya:</b> Hanya SATU bentuk: <b>도</b>. Tidak pernah berubah.</p>
+          <p><b>4) Contoh sehari-hari:</b></p>
+          <p class="note-example"><b>저도 학생이에요.</b><br>Romanisasi: jeo-do haksaeng-ieyo.<br>Artinya: Saya juga seorang pelajar.<br>Pola: 저 (saya) + <b>도</b> — 는 pada 저는 diganti 도.</p>
+          <p class="note-example"><b>오늘도 커피를 마셔요.</b><br>Romanisasi: oneul-do keopireul masyeoyo.<br>Artinya: Hari ini pun (saya) minum kopi.<br>Pola: 오늘 (hari ini) + <b>도</b>.</p>
+          <p><b>⚠️ Jebakan pemula:</b> Jangan dobel: 저는도 ✗ → 저도 ✓. Tapi setelah partikel tempat 에/에서, 도 boleh menempel di belakangnya: 집에서도 공부해요 (di rumah pun belajar).</p>
+        </div>
+      </details>
+    </div>
+    <p class="section-sub" style="margin-top:14px">📚 Partikel lain — <b>로/으로</b> (dengan alat / ke arah), <b>만</b> (hanya), <b>부터</b> (sejak), <b>까지</b> (sampai), dan bentuk santai <b>(이)랑</b> &amp; <b>한테</b> — nanti dipelajari di level lanjut, setelah 9 partikel inti di atas hafal di luar kepala.</p>
   </section>
 
   <!-- 5. JENIS KATA -->
@@ -405,7 +544,8 @@
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <p class="footer-brand">English Learning App</p>
+    <p class="footer-brand">DidiGo</p>
+    <p class="footer-tagline">Belajar Bahasa Asing, selangkah demi selangkah</p>
     <p class="footer-note">Belajar sedikit setiap hari lebih baik daripada banyak tapi jarang. Jaga streak-mu, kumpulkan XP, dan naik level dari A0 sampai C2.</p>
   </div>
 </footer>

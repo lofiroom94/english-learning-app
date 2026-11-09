@@ -1,5 +1,5 @@
 /* ============================================================
-   English Learning App — v2 design
+   DidiGo — v2 design
    Light, clean, proper. System fonts only, no external assets.
    ============================================================ */
 :root{
@@ -38,6 +38,11 @@ button{font:inherit}
   display:inline-flex;align-items:center;justify-content:center;
   box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)}
 .brand-name{font-weight:800;font-size:1.05rem;letter-spacing:-.01em}
+.brand-text{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.brand-tagline{font-size:.7rem;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-brandline{margin:0 0 10px;font-size:.95rem;color:var(--text-soft)}
+.hero-brandline strong{font-weight:800;color:var(--text)}
+.footer-tagline{font-size:.9rem;font-weight:600;color:var(--text-soft);margin-bottom:4px}
 #auth-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #user-info{color:var(--text-soft);font-size:.86rem;max-width:220px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -211,7 +216,7 @@ details.word-card{border-top:5px solid var(--blue)}
 .option{display:block;width:100%;min-height:52px;text-align:left;background:var(--surface);
   border:1.5px solid var(--border-strong);border-radius:14px;padding:12px 16px;
   font-weight:700;cursor:pointer;color:var(--text);font-size:1rem}
-.option:hover{border-color:var(--blue);background:var(--blue-soft)}
+.option:not(:disabled):hover{border-color:var(--blue);background:var(--blue-soft)}
 .option small{display:block;color:var(--green-dark);font-weight:500;font-style:italic;margin-top:2px}
 .quiz-feedback{margin:14px 0;font-weight:600}
 .quiz-feedback:empty{margin:0}
@@ -237,6 +242,7 @@ td,th{border:1px solid var(--border);padding:6px 10px;text-align:left}
   .topbar-inner{padding:10px 14px}
   #user-info{max-width:150px}
   .brand-name{font-size:.98rem}
+  .brand-tagline{font-size:.64rem}
   .lesson-card{flex-direction:column;align-items:stretch}
   .lesson-side{justify-content:space-between}
   .quiz-card{padding:20px 16px}
@@ -261,6 +267,12 @@ td,th{border:1px solid var(--border);padding:6px 10px;text-align:left}
 .option:disabled{cursor:default;opacity:.92}
 .option.is-correct{border-color:var(--green);background:var(--green-soft)}
 .option.is-wrong{border-color:var(--red);background:#ffecec}
+/* v9: catatan partikel Korea */
+.particle-table{width:100%;border-collapse:collapse;font-size:.95rem}
+.particle-table th,.particle-table td{border:1px solid var(--border-strong);padding:8px 10px;text-align:left;vertical-align:top}
+/* v9: label tegas — hanya SATU pilihan boleh berlabel \u2713 Benar */
+.option.is-correct::after{content:"\u2713 Benar";float:right;font-weight:700}
+.option.is-wrong::after{content:"\u2717 Pilihanmu";float:right;font-weight:700}
 .result-overlay{position:fixed;inset:0;z-index:100;background:rgba(20,30,20,.55);
   display:flex;align-items:center;justify-content:center;padding:18px}
 .result-overlay[hidden]{display:none}
@@ -374,7 +386,7 @@ input:focus{border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,.22)}
 .quiz-progress-fill{background:linear-gradient(90deg,#7c5cff,#2dd4bf)}
 .context{background:#3a2f10;border-color:#6b5516;color:#ffe1a1}
 .option{background:var(--surface);border-color:var(--border-strong);color:var(--text)}
-.option:hover{border-color:#2dd4bf;background:#123b3a}
+.option:not(:disabled):hover{border-color:#2dd4bf;background:#123b3a}
 .option small{color:#2dd4bf}
 .option.is-correct{border-color:#2dd4bf;background:#123b3a}
 .option.is-wrong{border-color:#ff6b6b;background:#3d1620}

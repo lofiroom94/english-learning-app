@@ -268,14 +268,17 @@ function buildQuestions(lesson){
   const qs = [];
   if (vocab.length >= 4){
     const V = vocab;
+    // v9: nama bahasa target mengikuti mode yang sedang dipilih — JANGAN hardcode "Inggris":
+    // di mode Korea semua teks soal harus menyebut "Bahasa Korea", di mode Inggris "Bahasa Inggris".
+    const TL = LANGUAGE_CODE === "ko" ? "Korea" : "Inggris";
     const mkId = (vi, seed) => { const r = rotatedOptions(idAll, V[vi][1], seed);
       return { ctx: "Pilih arti Bahasa Indonesia yang tepat untuk kata yang ditanyakan.",
         q: "Apa arti Bahasa Indonesia dari kata \u201C" + V[vi][0] + "\u201D?",
         translation: "Contoh: " + V[vi][2] + " \u2014 Artinya: " + V[vi][3],
         opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     const mkEn = (vi, seed) => { const r = rotatedOptions(enAll, V[vi][0], seed);
-      return { ctx: "Pilih kata Bahasa Inggris yang tepat untuk arti yang ditanyakan.",
-        q: "Apa Bahasa Inggrisnya \u201C" + V[vi][1] + "\u201D?",
+      return { ctx: "Pilih kata Bahasa " + TL + " yang tepat untuk arti yang ditanyakan.",
+        q: "Apa Bahasa " + TL + "nya \u201C" + V[vi][1] + "\u201D?",
         translation: "Contoh: " + V[vi][2] + " \u2014 Artinya: " + V[vi][3],
         opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     const mkBlank = (vi, seed) => { const r = rotatedOptions(enAll, V[vi][0], seed);
@@ -284,7 +287,7 @@ function buildQuestions(lesson){
         translation: "Artinya (kalimat lengkap): " + V[vi][3],
         opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     const mkSent = (vi, seed) => { const exIds = vocab.map(v => v[3]); const r = rotatedOptions(exIds, V[vi][3], seed);
-      return { ctx: "Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Inggris ini.",
+      return { ctx: "Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa " + TL + " ini.",
         q: "Apa arti kalimat ini: \u201C" + V[vi][2] + "\u201D",
         translation: "",
         opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
@@ -292,14 +295,14 @@ function buildQuestions(lesson){
     // (arti kata, kata dari arti, lengkapi kalimat, arti kalimat) - tidak ada
     // soal yang teksnya sama persis di dalam satu latihan.
     qs.push(mkId(0, seedBase));        // 1  arti kata ke-1
-    qs.push(mkEn(1, seedBase + 1));    // 2  kata Inggris dari arti ke-2
+    qs.push(mkEn(1, seedBase + 1));    // 2  kata target dari arti ke-2
     qs.push(mkBlank(2, seedBase + 2)); // 3  lengkapi kalimat kata ke-3
     qs.push(mkBlank(3, seedBase + 3)); // 4  lengkapi kalimat kata ke-4
     qs.push(mkSent(0, seedBase + 4));  // 5  arti kalimat contoh kata ke-1
     qs.push(mkId(2, seedBase + 5));    // 6  arti kata ke-3
-    qs.push(mkEn(3, seedBase + 6));    // 7  kata Inggris dari arti ke-4
+    qs.push(mkEn(3, seedBase + 6));    // 7  kata target dari arti ke-4
     qs.push(mkId(1, seedBase + 7));    // 8  arti kata ke-2
-    qs.push(mkEn(2, seedBase + 8));    // 9  kata Inggris dari arti ke-3
+    qs.push(mkEn(2, seedBase + 8));    // 9  kata target dari arti ke-3
     qs.push(mkSent(1, seedBase + 9));  // 10 arti kalimat contoh kata ke-2
     // Jaminan anti-dobel: dua kalimat contoh yang hanya beda kata isian bisa
     // menghasilkan teks soal yang sama persis setelah kata dikosongkan
@@ -366,7 +369,9 @@ window.answer = function(i){
   s.answered = true;
   const item = s.questions[s.idx], ok = i === item.answer;
   if (ok) s.correct++; else s.wrong++;
-  item.opts.forEach((o, j) => { const b = $("opt-" + j); if (b){ b.disabled = true; if (j === item.answer) b.classList.add("is-correct"); else if (j === i) b.classList.add("is-wrong"); } });
+  // v9: bersihkan dulu semua kelas warna, lalu warnai TEPAT satu jawaban benar
+  // (is-correct) dan — bila pilihanmu salah — pilihanmu saja (is-wrong + is-picked).
+  item.opts.forEach((o, j) => { const b = $("opt-" + j); if (b){ b.disabled = true; b.classList.remove("is-correct", "is-wrong", "is-picked"); if (j === item.answer) b.classList.add("is-correct"); else if (j === i) b.classList.add("is-wrong"); if (j === i) b.classList.add("is-picked"); } });
   $("quiz-feedback").textContent = ok
     ? "✅ Benar! Kalimat lengkapnya: " + item.full + " (" + item.full_id + ")"
     : "❌ Belum tepat. Jawaban yang benar: " + item.opts[item.answer][0] + ". Kalimat lengkapnya: " + item.full + " (" + item.full_id + ")";
@@ -632,7 +637,12 @@ $("btn-logout").onclick=async()=>{ if(sb) await sb.auth.signOut(); refreshUser()
 
 // ===== v6: TEKS UI PER BAHASA + PEMILIH BAHASA =====
 const LANG_UI = {
-  en: { heroTitle: "Belajar Bahasa Inggris, selangkah demi selangkah",
+  en: { heroEyebrow: "Belajar Bahasa Inggris \u00B7 A0 sampai C2",
+    dashSub: "Persentase selesai untuk Bahasa Inggris dan untuk setiap level A0 sampai C2, dihitung dari pelajaran yang sudah kamu selesaikan.",
+    bank1: "Diberikan kata Bahasa Inggris, pilih arti Bahasa Indonesianya yang tepat.",
+    bank2: "Diberikan arti Bahasa Indonesia, pilih kata Bahasa Inggrisnya yang tepat.",
+    bank4: "Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Inggris.",
+    heroTitle: "Belajar Bahasa Inggris, selangkah demi selangkah",
     heroSub: "42 pelajaran berurutan dari pemula mutlak sampai sangat mahir — setiap soal, kosakata, dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.",
     showcaseTitle: "English", chip: "ENGLISH • A0–C2 • 42 PELAJARAN",
     chartNote: "A0 = langkah pertama: kenalan huruf, bunyi, dan salam. Ikuti jalurnya dari atas ke bawah.",
@@ -649,7 +659,12 @@ const LANG_UI = {
     notesTitle: "📝 Catatan Penting", notesSub: "Aturan dasar yang paling sering dipakai — am/is/are, do/does, sampai kenapa “a university” bukan “an university”. Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.",
     wordsTitle: "🏷️ Jenis Kata (Parts of Speech)", wordsSub: "Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya. Kata Hari Ini berganti otomatis setiap hari.",
     jalurTitle: "🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2" },
-  ko: { heroTitle: "Belajar Bahasa Korea, selangkah demi selangkah",
+  ko: { heroEyebrow: "Belajar Bahasa Korea \u00B7 Hangul sampai C2",
+    dashSub: "Persentase selesai untuk Bahasa Korea dan untuk setiap level A0 sampai C2, dihitung dari pelajaran yang sudah kamu selesaikan.",
+    bank1: "Diberikan kata Bahasa Korea, pilih arti Bahasa Indonesianya yang tepat.",
+    bank2: "Diberikan arti Bahasa Indonesia, pilih kata Bahasa Koreanya yang tepat.",
+    bank4: "Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Korea.",
+    heroTitle: "Belajar Bahasa Korea, selangkah demi selangkah",
     heroSub: "42 pelajaran berurutan dari Hangul sampai sangat mahir — setiap soal, kosakata Hangul (dengan cara bacanya), dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.",
     showcaseTitle: "한국어 · Korean", chip: "KOREAN • HANGUL → C2 • 42 PELAJARAN",
     chartNote: "A0 = langkah pertama: kenalan Hangul & bunyi. Ikuti jalurnya dari atas ke bawah.",
@@ -674,6 +689,8 @@ function applyLanguage(code){
   const U = LANG_UI[LANGUAGE_CODE];
   const set = function(id, txt){ const el = $(id); if (el && txt) el.textContent = txt; };
   set("hero-title", U.heroTitle); set("hero-sub", U.heroSub);
+  set("hero-eyebrow", U.heroEyebrow); set("dash-sub", U.dashSub);
+  set("bank-desc-1", U.bank1); set("bank-desc-2", U.bank2); set("bank-desc-4", U.bank4);
   set("showcase-title", U.showcaseTitle); set("showcase-chip", U.chip);
   set("chart-note", U.chartNote); set("signature-title", U.signature);
   set("notes-title", U.notesTitle); set("notes-sub", U.notesSub);
@@ -699,6 +716,7 @@ function renderV7(){
   var isKo = LANGUAGE_CODE === "ko";
   var ven = document.getElementById("v7-en"), vko = document.getElementById("v7-ko");
   if (ven) ven.hidden = isKo; if (vko) vko.hidden = !isKo;
+  var pk = document.getElementById("ko-partikel"); if (pk) pk.hidden = !isKo; // v9: catatan partikel hanya di mode Korea
   if (!isKo && typeof ESSAYS !== "undefined"){
     document.getElementById("essays").innerHTML = ESSAYS.map(function(e,i){ return '<details class="note-card"><summary>'+esc(e.type)+' · Band '+esc(e.band)+' — '+esc(e.title)+'</summary><div class="note-body"><p><b>Soal:</b> '+esc(e.prompt)+'</p><p><b>Template:</b> '+esc(e.template)+'</p><p style="white-space:pre-line">'+esc(e.body)+'</p><p><b>Catatan Bahasa Indonesia:</b> '+esc(e.id_note)+'</p></div></details>'; }).join("");
     document.getElementById("mock-list").innerHTML = MOCK_TESTS.map(function(m,i){ return '<article class="bank-card"><h3>'+esc(m.name)+'</h3><p>10 soal · '+m.minutes+' menit · ada timer, skor, dan pembahasan tiap soal.</p><button class="btn btn-primary" onclick="startMock('+i+')">Mulai Mock Test</button></article>'; }).join("");
@@ -755,6 +773,7 @@ function startTopik(which){ var src = which===0?TOPIK1:TOPIK2; startMockSet(whic
 function startKoMock(which){ var src = which===0?KOMOCK_R:KOMOCK_L; startMockSet(which===0?"TOPIK Mock — Reading":"TOPIK Mock — Listening (Transkrip)", src.map(function(q){ return {q:q[0], opts:q[1], ans:q[2], why:q[3]+" Strategi: "+q[4]}; }), 15); }
 function showMockQ(){
   var st = mockState, q = st.qs[st.idx];
+  st.answered = false; // v9
   document.getElementById("mock-meta").textContent = st.title + " — selesaikan sebelum timer habis.";
   document.getElementById("mock-counter").textContent = "Soal " + (st.idx+1) + " dari " + st.total;
   document.getElementById("mock-live").textContent = "✅ Benar: " + st.correct + " · ❌ Salah: " + st.wrong;
@@ -766,6 +785,8 @@ function showMockQ(){
 }
 function answerMock(i){
   var st = mockState, q = st.qs[st.idx], ok = i===q.ans;
+  if (st.answered) return; // v9: satu soal hanya boleh dijawab & dihitung sekali
+  st.answered = true;
   if (ok) st.correct++; else st.wrong++;
   st.answers.push({q:q, picked:i, ok:ok});
   document.getElementById("mock-live").textContent = "✅ Benar: " + st.correct + " · ❌ Salah: " + st.wrong;
