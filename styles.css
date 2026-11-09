@@ -1,0 +1,244 @@
+/* ============================================================
+   English Learning App — v2 design
+   Light, clean, proper. System fonts only, no external assets.
+   ============================================================ */
+:root{
+  --green:#58cc02; --green-dark:#46a302; --green-soft:#eaf7dc;
+  --blue:#1cb0f6; --blue-soft:#e3f4fe;
+  --amber:#ff9600; --amber-soft:#fff3df;
+  --purple:#a259d9; --purple-soft:#f3eafd;
+  --red:#ff4b4b;
+  --bg:#f7f9f7; --surface:#ffffff; --surface-alt:#f0f4f0;
+  --text:#1f2937; --text-soft:#5b6b5b; --muted:#84917f;
+  --border:#e2e8e2; --border-strong:#cfdccf;
+  --radius:18px; --radius-sm:12px;
+  --shadow:0 2px 10px rgba(31,41,55,.06),0 10px 28px rgba(31,41,55,.05);
+  --shadow-lift:0 6px 16px rgba(31,41,55,.09),0 16px 34px rgba(31,41,55,.08);
+  --lvl-a0:#0d9488; --lvl-a1:#58cc02; --lvl-a2:#1cb0f6;
+  --lvl-b1:#a259d9; --lvl-b2:#ff9600; --lvl-c1:#ff4b4b; --lvl-c2:#db2777;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  margin:0;background:var(--bg);color:var(--text);line-height:1.55;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3{line-height:1.25;margin:0}
+p{margin:0}
+a{color:var(--green-dark)}
+button{font:inherit}
+:focus-visible{outline:3px solid rgba(28,176,246,.55);outline-offset:2px;border-radius:8px}
+
+/* ---------- Top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);
+  backdrop-filter:saturate(1.4) blur(6px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1060px;margin:0 auto;padding:10px 20px;display:flex;
+  flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--green);
+  display:inline-flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)}
+.brand-name{font-weight:800;font-size:1.05rem;letter-spacing:-.01em}
+#auth-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#user-info{color:var(--text-soft);font-size:.86rem;max-width:220px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:4px;min-height:36px;
+  padding:6px 12px;border-radius:999px;font-weight:800;font-size:.88rem;
+  border:1px solid var(--border);background:var(--surface)}
+.pill-xp{background:var(--amber-soft);border-color:#f5d9ae;color:#8a5200}
+.pill-streak{background:#ffecec;border-color:#f6caca;color:#9c2222}
+.topbar-progress{height:4px;background:var(--surface-alt)}
+.topbar-progress span{display:block;height:100%;width:0;background:var(--green);
+  border-radius:0 4px 4px 0;transition:width .5s ease}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:44px;padding:10px 18px;border-radius:12px;border:1px solid transparent;
+  font-weight:700;cursor:pointer;text-decoration:none;font-size:.95rem;
+  transition:transform .06s ease,box-shadow .15s ease,background .15s ease}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--green);color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.16)}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-outline{background:var(--surface);color:var(--green-dark);border-color:var(--border-strong)}
+.btn-outline:hover{border-color:var(--green);background:var(--green-soft)}
+.btn-ghost{background:transparent;color:var(--text-soft);border-color:var(--border)}
+.btn-ghost:hover{background:var(--surface-alt);color:var(--text)}
+.btn-lg{min-height:48px;padding:12px 22px;font-size:1rem;border-radius:14px}
+.btn-sm{min-height:44px;padding:8px 14px;font-size:.9rem}
+
+/* ---------- Layout ---------- */
+main{max-width:1060px;margin:0 auto;padding:24px 20px 8px}
+.section-block{margin:0 0 34px}
+.section-eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--green-dark);margin-bottom:6px}
+.section-title{font-size:1.45rem;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+.section-sub{color:var(--text-soft);max-width:640px;margin-bottom:16px}
+
+/* ---------- Hero ---------- */
+.hero{background:linear-gradient(135deg,#eaf7dc 0%,#e3f4fe 58%,#f3eafd 100%);
+  border:1px solid var(--border);border-radius:24px;padding:34px 30px;
+  box-shadow:var(--shadow);margin-bottom:20px}
+.hero-eyebrow{font-size:.8rem;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--green-dark);margin-bottom:10px}
+.hero-title{font-size:clamp(1.7rem,4.5vw,2.5rem);font-weight:800;
+  letter-spacing:-.02em;max-width:620px;margin-bottom:12px}
+.hero-sub{color:#3c4a3c;font-size:1.02rem;max-width:600px;margin-bottom:20px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.hero-progress-card{background:rgba(255,255,255,.88);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;max-width:620px}
+.hero-progress-head{display:flex;flex-wrap:wrap;gap:4px 12px;
+  justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.hero-progress-label{font-weight:800}
+.hero-progress-text{color:var(--text-soft);font-size:.9rem;font-weight:600}
+.progress-track{height:14px;background:var(--surface-alt);border-radius:999px;overflow:hidden}
+.progress-fill{display:block;height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--green),#7ed321);transition:width .5s ease}
+.hero-progress-hint{color:var(--muted);font-size:.86rem;margin-top:8px}
+
+/* ---------- Benefits ---------- */
+.benefits{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.benefit-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.benefit-card h3{font-size:1rem;margin:10px 0 6px}
+.benefit-card p{color:var(--text-soft);font-size:.92rem}
+.benefit-icon{width:44px;height:44px;border-radius:12px;display:inline-flex;
+  align-items:center;justify-content:center;font-size:1.25rem}
+.benefit-icon-green{background:var(--green-soft)}
+.benefit-icon-blue{background:var(--blue-soft)}
+.benefit-icon-amber{background:var(--amber-soft)}
+.benefit-icon-purple{background:var(--purple-soft)}
+
+/* ---------- Stats strip ---------- */
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:2px}
+.stat-icon{font-size:1.3rem}
+.stat-value{font-size:1.5rem;font-weight:800;letter-spacing:-.01em}
+.stat-label{color:var(--text-soft);font-size:.88rem}
+.stat-xp{border-top:4px solid var(--amber)}
+.stat-streak{border-top:4px solid var(--red)}
+
+/* ---------- Auth / mission ---------- */
+.auth-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-lift);
+  max-width:520px;margin:0 auto 20px}
+.auth-card h2{font-size:1.3rem;margin-bottom:6px}
+.field-label{display:block;font-weight:700;font-size:.9rem;margin:14px 0 6px}
+input{display:block;width:100%;min-height:48px;padding:11px 14px;border-radius:12px;
+  border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);font:inherit}
+input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(28,176,246,.2)}
+.auth-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.auth-msg{margin-top:12px;color:var(--text-soft);font-size:.92rem}
+.mission-card{display:flex;gap:16px;align-items:center;background:var(--surface);
+  border:1px solid var(--border);border-left:6px solid var(--green);
+  border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin-bottom:34px}
+.mission-icon{font-size:2rem;line-height:1}
+.mission-body{flex:1;min-width:200px}
+.mission-body h2{font-size:1.2rem;margin-bottom:4px}
+.mission-body p{color:var(--text-soft)}
+
+/* ---------- Notes (accordion cards) ---------- */
+.notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+details.note-card,details.word-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:6px 18px;box-shadow:var(--shadow)}
+details.note-card[open],details.word-card[open]{border-color:var(--border-strong)}
+details.note-card summary,details.word-card summary{cursor:pointer;font-weight:700;
+  min-height:44px;display:flex;align-items:center;gap:8px;padding:10px 0;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▾";margin-left:auto;color:var(--muted);font-weight:800}
+details[open ] summary::after{content:"▴"}
+.note-body,.word-body{padding:0 0 14px;color:var(--text-soft)}
+.note-example{padding:8px 0;border-top:1px dashed var(--border)}
+.note-example b{color:var(--text)}
+.translation{color:var(--green-dark);font-style:italic;font-size:.93rem}
+
+/* ---------- Word classes ---------- */
+.word-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+details.word-card{border-top:5px solid var(--blue)}
+.word-today{background:var(--amber-soft);border:1px solid #f5d9ae;
+  border-radius:var(--radius-sm);padding:12px 14px;margin:4px 0 10px}
+.word-today .word-big{font-size:1.2rem;font-weight:800;color:var(--text)}
+.word-today .word-sentence{margin-top:6px;color:var(--text)}
+.word-others{color:var(--text-soft);font-size:.92rem}
+
+/* ---------- Lesson path ---------- */
+.level-group{margin-bottom:28px}
+.level-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.level-pill{display:inline-flex;align-items:center;min-height:32px;padding:4px 14px;
+  border-radius:999px;color:#fff;font-weight:800;font-size:.9rem;letter-spacing:.02em}
+.level-name{font-weight:700;color:var(--text-soft)}
+.lvl-A0{--lvl:var(--lvl-a0)} .lvl-A1{--lvl:var(--lvl-a1)} .lvl-A2{--lvl:var(--lvl-a2)}
+.lvl-B1{--lvl:var(--lvl-b1)} .lvl-B2{--lvl:var(--lvl-b2)}
+.lvl-C1{--lvl:var(--lvl-c1)} .lvl-C2{--lvl:var(--lvl-c2)}
+.level-pill{background:var(--lvl,var(--green))}
+.path{position:relative;margin:0;padding:0 0 4px 6px;list-style:none}
+.path::before{content:"";position:absolute;left:27px;top:14px;bottom:14px;
+  width:3px;border-radius:3px;background:var(--border)}
+.path-node{position:relative;display:flex;gap:14px;align-items:flex-start;padding:7px 0}
+.node-dot{position:relative;z-index:1;flex:0 0 auto;width:44px;height:44px;
+  border-radius:50%;background:var(--lvl,var(--green));color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.16),0 2px 6px rgba(31,41,55,.14)}
+.path-node.is-done .node-dot{background:var(--green)}
+.lesson-card{flex:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);
+  display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
+.lesson-card:hover{box-shadow:var(--shadow-lift)}
+.lesson-info{min-width:200px;flex:1}
+.lesson-title{font-weight:800;font-size:1rem}
+.lesson-desc{color:var(--text-soft);font-size:.9rem;margin-top:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lesson-side{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.xp-chip{display:inline-flex;align-items:center;min-height:32px;padding:4px 10px;
+  border-radius:999px;background:var(--amber-soft);border:1px solid #f5d9ae;
+  color:#8a5200;font-weight:800;font-size:.84rem}
+.done-chip{display:inline-flex;align-items:center;min-height:32px;padding:4px 10px;
+  border-radius:999px;background:var(--green-soft);border:1px solid #cdeeb2;
+  color:var(--green-dark);font-weight:800;font-size:.84rem}
+.btn-start{background:var(--lvl,var(--green));color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.16)}
+.btn-start:hover{filter:brightness(.93)}
+.btn-again{background:var(--surface);color:var(--green-dark);border-color:var(--border-strong)}
+.btn-again:hover{background:var(--green-soft);border-color:var(--green)}
+
+/* ---------- Quiz ---------- */
+.quiz-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:26px;box-shadow:var(--shadow-lift);margin-bottom:34px}
+.quiz-card h2{font-size:1.3rem;margin-bottom:12px}
+.context{background:var(--amber-soft);border:1px solid #f5d9ae;color:#6b4a00;
+  border-radius:var(--radius-sm);padding:12px 16px;margin:10px 0 16px}
+.quiz-q{font-size:1.15rem;font-weight:700;margin-bottom:6px}
+#quiz-options{display:grid;gap:10px;margin-top:16px}
+.option{display:block;width:100%;min-height:52px;text-align:left;background:var(--surface);
+  border:1.5px solid var(--border-strong);border-radius:14px;padding:12px 16px;
+  font-weight:700;cursor:pointer;color:var(--text);font-size:1rem}
+.option:hover{border-color:var(--blue);background:var(--blue-soft)}
+.option small{display:block;color:var(--green-dark);font-weight:500;font-style:italic;margin-top:2px}
+.quiz-feedback{margin:14px 0;font-weight:600}
+.quiz-feedback:empty{margin:0}
+table{border-collapse:collapse}
+td,th{border:1px solid var(--border);padding:6px 10px;text-align:left}
+
+/* ---------- Footer ---------- */
+.site-footer{border-top:1px solid var(--border);background:var(--surface);margin-top:10px}
+.footer-inner{max-width:1060px;margin:0 auto;padding:26px 20px 34px;color:var(--text-soft)}
+.footer-brand{font-weight:800;color:var(--text);font-size:1.02rem;margin-bottom:6px}
+.footer-note{margin-top:10px;font-size:.9rem;color:var(--muted)}
+
+/* ---------- Mobile ---------- */
+@media (max-width:860px){
+  .benefits,.stats-strip{grid-template-columns:1fr 1fr}
+  .notes-grid,.word-grid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  main{padding:16px 14px 4px}
+  .hero{padding:24px 18px;border-radius:20px}
+  .benefits,.stats-strip{grid-template-columns:1fr}
+  .mission-card{flex-wrap:wrap;padding:18px}
+  .topbar-inner{padding:10px 14px}
+  #user-info{max-width:150px}
+  .brand-name{font-size:.98rem}
+  .lesson-card{flex-direction:column;align-items:stretch}
+  .lesson-side{justify-content:space-between}
+  .quiz-card{padding:20px 16px}
+  .path::before{left:26px}
+}
