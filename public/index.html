@@ -4,67 +4,170 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>English Learning App — Belajar Bahasa Inggris</title>
+<meta name="description" content="Belajar Bahasa Inggris dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, dan kata hari ini. Progres dan XP tersimpan di akunmu.">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<header>
-  <h1>English Learning App</h1>
-  <div id="auth-bar">
-    <span id="user-info">Belum masuk</span>
-    <span id="xp-badge">⭐ 0 XP</span>
-    <span id="streak-badge">🔥 0 hari</span>
-    <button id="btn-login">Masuk / Daftar</button>
-    <button id="btn-logout" hidden>Keluar</button>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#" aria-label="English Learning App">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 5.5C6.2 4.2 9 4 12 5.2 15 4 17.8 4.2 20 5.5v12c-2.2-1.3-5-1.5-8-.3-3-1.2-5.8-1-8 .3v-12Z" fill="#fff" opacity=".95"/><path d="M12 5.2v12" stroke="#46a302" stroke-width="1.6"/></svg>
+      </span>
+      <span class="brand-name">English Learning App</span>
+    </a>
+    <div id="auth-bar">
+      <span id="user-info">Belum masuk</span>
+      <span id="xp-badge" class="pill pill-xp">⭐ 0 XP</span>
+      <span id="streak-badge" class="pill pill-streak">🔥 0 hari</span>
+      <button id="btn-login" class="btn btn-primary">Masuk / Daftar</button>
+      <button id="btn-logout" class="btn btn-ghost" hidden>Keluar</button>
+    </div>
   </div>
+  <div class="topbar-progress" aria-hidden="true"><span id="top-progress-fill"></span></div>
 </header>
 
 <main>
-  <section id="auth-box" hidden>
+  <!-- 1. HERO -->
+  <section class="hero">
+    <p class="hero-eyebrow">Belajar Bahasa Inggris · A0 sampai C2</p>
+    <h2 class="hero-title">Belajar Bahasa Inggris, selangkah demi selangkah</h2>
+    <p class="hero-sub">42 pelajaran berurutan dari pemula mutlak sampai sangat mahir — setiap soal, kosakata, dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary btn-lg" href="#jalur-belajar">Mulai belajar</a>
+      <a class="btn btn-outline btn-lg" href="#catatan">Baca catatan penting</a>
+    </div>
+    <div class="hero-progress-card">
+      <div class="hero-progress-head">
+        <span class="hero-progress-label">Progres levelmu</span>
+        <span id="hero-progress-text" class="hero-progress-text">0 dari 42 pelajaran selesai</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-label="Progres pelajaran">
+        <span id="hero-progress-fill" class="progress-fill"></span>
+      </div>
+      <p class="hero-progress-hint">Selesaikan pelajaran untuk menambah XP. Progres tersimpan otomatis bila kamu sudah masuk.</p>
+    </div>
+  </section>
+
+  <!-- Manfaat / fitur -->
+  <section class="benefits" aria-label="Keunggulan">
+    <article class="benefit-card">
+      <span class="benefit-icon benefit-icon-green" aria-hidden="true">🇮🇩</span>
+      <h3>Selalu ada artinya</h3>
+      <p>Setiap soal, kosakata, bacaan, dan dialog dilengkapi arti Bahasa Indonesia — tidak ada lagi menebak-nebak.</p>
+    </article>
+    <article class="benefit-card">
+      <span class="benefit-icon benefit-icon-blue" aria-hidden="true">💾</span>
+      <h3>Progres tersimpan</h3>
+      <p>Masuk dengan akunmu, lalu XP, streak, dan pelajaran yang selesai tersimpan di database — tidak reset saat browser ditutup.</p>
+    </article>
+    <article class="benefit-card">
+      <span class="benefit-icon benefit-icon-amber" aria-hidden="true">🌟</span>
+      <h3>Kata baru setiap hari</h3>
+      <p>Bagian Jenis Kata menampilkan Kata Hari Ini yang berganti otomatis setiap hari, lengkap dengan contoh kalimat dan artinya.</p>
+    </article>
+    <article class="benefit-card">
+      <span class="benefit-icon benefit-icon-purple" aria-hidden="true">🧭</span>
+      <h3>Jalur yang jelas</h3>
+      <p>Pelajaran tersusun sebagai jalur dari A0 sampai C2. Kerjakan berurutan, kumpulkan XP, dan jaga streak harianmu.</p>
+    </article>
+  </section>
+
+  <!-- 2. DASHBOARD STATS -->
+  <section class="stats-strip" aria-label="Ringkasanku">
+    <div class="stat-card stat-xp">
+      <span class="stat-icon" aria-hidden="true">⭐</span>
+      <span class="stat-value" id="hero-xp">0 XP</span>
+      <span class="stat-label">Total XP kamu</span>
+    </div>
+    <div class="stat-card stat-streak">
+      <span class="stat-icon" aria-hidden="true">🔥</span>
+      <span class="stat-value" id="hero-streak">0 hari</span>
+      <span class="stat-label">Streak belajar</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon" aria-hidden="true">🗺️</span>
+      <span class="stat-value">42</span>
+      <span class="stat-label">Pelajaran · 7 level</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon" aria-hidden="true">📝</span>
+      <span class="stat-value">13</span>
+      <span class="stat-label">Catatan penting</span>
+    </div>
+  </section>
+
+  <!-- LOGIN / DAFTAR -->
+  <section id="auth-box" class="auth-card" hidden>
+    <p class="section-eyebrow">Akun</p>
     <h2>Masuk / Daftar</h2>
-    <p>Dengan akun, progres dan XP kamu tersimpan di database dan tidak reset.</p>
-    <input id="auth-email" type="email" placeholder="Email">
-    <input id="auth-password" type="password" placeholder="Kata sandi (min. 6 karakter)">
-    <button id="btn-signin">Masuk</button>
-    <button id="btn-signup">Daftar akun baru</button>
-    <p id="auth-msg"></p>
+    <p class="section-sub">Dengan akun, progres dan XP kamu tersimpan di database dan tidak reset.</p>
+    <label class="field-label" for="auth-email">Email</label>
+    <input id="auth-email" type="email" placeholder="nama@email.com" autocomplete="email">
+    <label class="field-label" for="auth-password">Kata sandi</label>
+    <input id="auth-password" type="password" placeholder="Kata sandi (min. 6 karakter)" autocomplete="current-password">
+    <div class="auth-actions">
+      <button id="btn-signin" class="btn btn-primary btn-lg">Masuk</button>
+      <button id="btn-signup" class="btn btn-outline btn-lg">Daftar akun baru</button>
+    </div>
+    <p id="auth-msg" class="auth-msg" role="status"></p>
   </section>
 
-  <section>
-    <h2>🎯 Misi Hari Ini</h2>
-    <p>Selesaikan 1 pelajaran hari ini untuk menjaga streak belajarmu.</p>
+  <!-- 3. MISI HARI INI -->
+  <section class="mission-card">
+    <div class="mission-icon" aria-hidden="true">🎯</div>
+    <div class="mission-body">
+      <h2>Misi Hari Ini</h2>
+      <p>Selesaikan 1 pelajaran hari ini untuk menjaga streak belajarmu.</p>
+    </div>
+    <a class="btn btn-primary" href="#jalur-belajar">Lihat pelajaran</a>
   </section>
 
-  <section>
-    <h2>📝 Catatan Penting — Wajib Tahu</h2>
-    <p>Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
-    <div id="notes"></div>
+  <!-- 4. CATATAN PENTING -->
+  <section id="catatan" class="section-block">
+    <p class="section-eyebrow">Wajib tahu</p>
+    <h2 class="section-title">📝 Catatan Penting</h2>
+    <p class="section-sub">Aturan dasar yang paling sering dipakai — am/is/are, do/does, sampai kenapa “a university” bukan “an university”. Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
+    <div id="notes" class="notes-grid"></div>
   </section>
 
-  <section>
-    <h2>🏷️ Jenis Kata (Parts of Speech)</h2>
-    <p>Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya.
-       Kata Hari Ini berganti otomatis setiap hari.</p>
-    <div id="word-classes"></div>
+  <!-- 5. JENIS KATA -->
+  <section class="section-block">
+    <p class="section-eyebrow">Jenis kata</p>
+    <h2 class="section-title">🏷️ Jenis Kata (Parts of Speech)</h2>
+    <p class="section-sub">Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya. Kata Hari Ini berganti otomatis setiap hari.</p>
+    <div id="word-classes" class="word-grid"></div>
   </section>
 
-  <section>
-    <h2>🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
+  <!-- 6. JALUR BELAJAR -->
+  <section id="jalur-belajar" class="section-block">
+    <p class="section-eyebrow">Jalur belajar</p>
+    <h2 class="section-title">🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
+    <p class="section-sub">Ikuti jalurnya dari atas ke bawah. Setiap pelajaran yang selesai memberi XP dan ditandai “Selesai”.</p>
     <div id="lessons"></div>
   </section>
 
-  <section id="quiz-box" hidden>
+  <!-- 7. KUIS -->
+  <section id="quiz-box" class="quiz-card" hidden>
+    <p class="section-eyebrow">Latihan</p>
     <h2 id="quiz-title"></h2>
     <div id="quiz-context"></div>
-    <p id="quiz-q"></p>
+    <p id="quiz-q" class="quiz-q"></p>
     <p id="quiz-translation"></p>
     <div id="quiz-options"></div>
-    <p id="quiz-feedback"></p>
-    <button id="quiz-next" hidden>Lanjut</button>
+    <p id="quiz-feedback" class="quiz-feedback" role="status"></p>
+    <button id="quiz-next" class="btn btn-primary btn-lg" hidden>Lanjut</button>
   </section>
 </main>
 
-<footer><p>Setiap soal ada arti Bahasa Indonesianya. Baca kotak konteks dulu sebelum menjawab soal isian.</p></footer>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="footer-brand">English Learning App</p>
+    <p>Setiap soal ada arti Bahasa Indonesianya. Baca kotak konteks dulu sebelum menjawab soal isian, supaya jawabannya tidak ambigu.</p>
+    <p class="footer-note">Belajar sedikit setiap hari lebih baik daripada banyak tapi jarang. Jaga streak-mu, kumpulkan XP, dan naik level dari A0 sampai C2.</p>
+  </div>
+</footer>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

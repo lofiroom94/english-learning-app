@@ -72,12 +72,26 @@ function dayIndex(pool){ const d=new Date(); const n=Math.floor(Date.UTC(d.getFu
 
 // ===== RENDER BERANDA =====
 const $=id=>document.getElementById(id);
-$("notes").innerHTML = NOTES.map(n=>`<details><summary>${n[0]}</summary><p>${n[1]}</p>`+
-  n[2].map(e=>`<p><b>${e[0]}</b>${e[1]?`<br><span class="translation">Artinya: ${e[1]}</span>`:""}</p>`).join("")+`</details>`).join("");
+$("notes").innerHTML = NOTES.map(n=>`<details class="note-card"><summary>${n[0]}</summary><div class="note-body"><p>${n[1]}</p>`+
+  n[2].map(e=>`<p class="note-example"><b>${e[0]}</b>${e[1]?`<br><span class="translation">Artinya: ${e[1]}</span>`:""}</p>`).join("")+`</div></details>`).join("");
 $("word-classes").innerHTML = WORD_CLASSES.map(wc=>{ const pool=wc[2]; const t=pool[dayIndex(pool)];
-  return `<details><summary>${wc[0]}</summary><p>${wc[1]}</p><p>🌟 <b>Kata Hari Ini: ${t[0]}</b> = ${t[1]}<br><b>${t[2]}</b><br><span class="translation">Artinya: ${t[3]}</span></p>`+
-  `<p>Contoh kata lain: ${pool.map(p=>p[0]+" ("+p[1]+")").join(", ")}</p></details>`;}).join("");
-$("lessons").innerHTML = LESSONS.map(l=>`<div class="lesson"><div><b>${l.level} · ${l.title}</b><br><small>${l.desc_id}</small></div><button onclick="startLesson('${l.id}')">Mulai · +${l.xp} XP</button></div>`).join("");
+  return `<details class="word-card"><summary>${wc[0]}</summary><div class="word-body"><p>${wc[1]}</p><div class="word-today">🌟 <span class="word-big">Kata Hari Ini: ${t[0]}</span> = ${t[1]}<p class="word-sentence"><b>${t[2]}</b><br><span class="translation">Artinya: ${t[3]}</span></p></div>`+
+  `<p class="word-others">Contoh kata lain: ${pool.map(p=>p[0]+" ("+p[1]+")").join(", ")}</p></div></details>`;}).join("");
+// Pelajaran yang sudah selesai di perangkat ini (untuk tanda "Selesai · ulangi")
+function doneIds(){ try{ return JSON.parse(localStorage.getItem("ela_completed")||"[]"); }catch(e){ return []; } }
+function markDone(id){ const d=doneIds(); if(!d.includes(id)){ d.push(id); localStorage.setItem("ela_completed",JSON.stringify(d)); } }
+function renderLessons(){ const done=doneIds(); const groups={};
+  LESSONS.forEach(l=>{ (groups[l.level]=groups[l.level]||[]).push(l); });
+  $("lessons").innerHTML = Object.keys(groups).map(lv=>{ const items=groups[lv]; const first=items[0];
+    return `<div class="level-group lvl-${lv}"><div class="level-head"><span class="level-pill">${lv}</span><span class="level-name">${first.level_name} · ${items.length} pelajaran</span></div><ol class="path">`+
+    items.map(l=>{ const isDone=done.includes(l.id);
+      return `<li class="path-node${isDone?" is-done":""}"><span class="node-dot" aria-hidden="true">${isDone?"✓":l.order}</span><div class="lesson-card"><div class="lesson-info"><p class="lesson-title">${l.title}</p><p class="lesson-desc">${l.desc_id}</p></div><div class="lesson-side"><span class="xp-chip">+${l.xp} XP</span>${isDone?`<span class="done-chip">✓ Selesai</span><button class="btn btn-sm btn-again" onclick="startLesson('${l.id}')">Ulangi</button>`:`<button class="btn btn-sm btn-start" onclick="startLesson('${l.id}')">Mulai</button>`}</div></div></li>`; }).join("")+
+    `</ol></div>`; }).join("");
+  const pct=LESSONS.length?Math.round(done.filter(id=>LESSONS.some(l=>l.id===id)).length/LESSONS.length*100):0;
+  const doneCount=done.filter(id=>LESSONS.some(l=>l.id===id)).length;
+  ["hero-progress-fill","top-progress-fill"].forEach(id=>{ const el=$(id); if(el) el.style.width=pct+"%"; });
+  const pt=$("hero-progress-text"); if(pt) pt.textContent=doneCount+" dari "+LESSONS.length+" pelajaran selesai"; }
+renderLessons();
 
 // ===== KUIS CONTOH DENGAN KONTEKS (perbaiki soal ambigu) =====
 const QUIZ = [
@@ -96,7 +110,7 @@ function showQ(){ const item=QUIZ[qi%QUIZ.length]; $("quiz-title").textContent=(
   $("quiz-options").innerHTML=item.opts.map((o,i)=>`<button class="option" onclick="answer(${i})">${o[0]}<small>Artinya: ${o[1]}</small></button>`).join(""); }
 window.answer=async function(i){ const item=QUIZ[qi%QUIZ.length]; const ok=i===item.answer;
   $("quiz-feedback").textContent= ok?`Benar! Kalimat lengkapnya: ${item.full} (${item.full_id})`:`Belum tepat. Jawaban: ${item.opts[item.answer][0]}. Kalimat lengkapnya: ${item.full} (${item.full_id})`;
-  $("quiz-next").hidden=false; if(ok) await saveProgress(20); };
+  $("quiz-next").hidden=false; if(ok){ if(currentLesson){ markDone(currentLesson.id); renderLessons(); } await saveProgress(20); } };
 $("quiz-next").onclick=()=>{ qi++; showQ(); };
 
 // ===== SUPABASE: LOGIN + SIMPAN PROGRES/XP =====
@@ -104,7 +118,8 @@ async function refreshUser(){ if(!sb) return; const {data}=await sb.auth.getUser
   $("user-info").textContent=u?("Masuk sebagai "+u.email):"Belum masuk (mode tamu: progres tidak tersimpan)";
   $("btn-login").hidden=!!u; $("btn-logout").hidden=!u;
   if(u){ const {data:p}=await sb.from("profiles").select("total_xp,streak_days").eq("id",u.id).single();
-    if(p){ $("xp-badge").textContent="⭐ "+p.total_xp+" XP"; $("streak-badge").textContent="🔥 "+p.streak_days+" hari"; } } }
+    if(p){ $("xp-badge").textContent="⭐ "+p.total_xp+" XP"; $("streak-badge").textContent="🔥 "+p.streak_days+" hari";
+      const hx=$("hero-xp"); if(hx) hx.textContent=p.total_xp+" XP"; const hs=$("hero-streak"); if(hs) hs.textContent=p.streak_days+" hari"; } } }
 async function saveProgress(xp){ if(!sb) return; const {data}=await sb.auth.getUser(); const u=data.user; if(!u||!currentLesson) return;
   await sb.from("lesson_results").upsert({user_id:u.id,language_code:LANGUAGE_CODE,lesson_id:currentLesson.id,level_code:currentLesson.level,score:100,xp_earned:xp,completed:true},{onConflict:"user_id,language_code,lesson_id"});
   await sb.from("xp_log").insert({user_id:u.id,language_code:LANGUAGE_CODE,source:currentLesson.id,xp});
