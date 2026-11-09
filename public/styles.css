@@ -352,7 +352,7 @@ img,svg,table{max-width:100%}
 .tu-msg{max-width:85%;padding:10px 14px;border-radius:14px;margin:10px 0;line-height:1.55}
 .tu-msg p{white-space:pre-wrap}
 .tu-msg.u{margin-left:auto;background:var(--pink)}
-.tu-msg.a{margin-right:auto;background:#fff;border:1px solid var(--line)}
+.tu-msg.a{margin-right:auto;background:var(--card);border:1px solid var(--line)}
 #tu-msgs{max-height:52vh;overflow-y:auto;padding-right:4px}
 
 /* ============================================================
@@ -418,6 +418,7 @@ img,svg,table{max-width:100%}
 .avatar-btn{padding:4px}
 .avatar-btn .avatar{width:38px;height:38px}
 .theme-btn{flex:none;width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:50%;font-size:18px;line-height:1}
+.search-toggle{display:none;flex:none;width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:50%;font-size:18px;line-height:1;align-items:center;justify-content:center}
 .search-wrap{flex:1 1 auto;max-width:430px;min-width:120px}
 .search-results{z-index:75}
 .burger{display:none;flex:none;width:44px;height:44px;padding:0;font-size:19px;align-items:center;justify-content:center}
@@ -450,15 +451,19 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
 }
 /* ===== HP (≤640px): 1 kolom, 1 baris bar atas, tanpa scroll mendatar ===== */
 @media (max-width:640px){
-  #topbar{gap:8px;padding:8px 10px}
-  .logo{font-size:20px}
-  .search-wrap{min-width:0}
+  #topbar{gap:6px;padding:8px 8px}
+  .logo{font-size:19px}
+  .search-wrap{display:none;min-width:0}
+  #topbar.search-open .search-wrap{display:block;position:absolute;top:100%;left:0;right:0;padding:10px 12px 12px;background:var(--card);border-bottom:1px solid var(--line);z-index:70;max-width:none}
+  #topbar.search-open .searchbox{max-width:none}
+  .search-toggle{display:inline-flex}
   .searchbox{padding:8px 11px}
   .searchbox input{font-size:14px}
   .lang-btn{padding:8px 9px;font-size:12px;min-height:44px}
   .lang-btn .lang-name{display:none}
-  .theme-btn{width:44px;height:44px}
-  .avatar-btn .avatar{width:36px;height:36px}
+  .theme-btn{width:40px;height:40px}
+  .search-toggle{width:40px;height:40px}
+  .avatar-btn .avatar{width:32px;height:32px}
   #content{padding:18px 14px 132px}
   .grid2,.grid3,.grid4,.opt-grid{grid-template-columns:1fr}
   .rate-grid{grid-template-columns:1fr 1fr}

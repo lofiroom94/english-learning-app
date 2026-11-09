@@ -9,10 +9,12 @@ const DG = window.DG_DATA;
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Render ringan jawaban Tutor AI: **tebal**, *miring*, butir * / - jadi • (HTML di-escape dulu, jadi aman).
+const md = s => esc(s).replace(/\*\*([^\s*]{1,40})\*\*/g, '<b>$1</b>').replace(/(^|\n)[ \t]*[*\-] /g, '$1• ').replace(/\*([^*]{1,80}?)\*(?=[\s.,;:!?)\]]|$)/g, '<i>$1</i>').replace(/\)\*\*/g, ')');
 const LANGMETA = {
   en: { name: 'Inggris', flag: 'EN', cur: 'Kurikulum IELTS · TOEFL · TOEIC', tts: 'en-US', exams: 'IELTS / TOEFL / TOEIC' },
-  ko: { name: 'Korea', flag: 'KO', cur: 'Kurikulum TOPIK', tts: 'ko-KR', exams: 'TOPIK I / TOPIK II / EPS-TOPIK' },
-  ja: { name: 'Jepang', flag: 'JA', cur: 'Kurikulum JLPT', tts: 'ja-JP', exams: 'JLPT / JFT-Basic' }
+  ko: { name: 'Korea', flag: 'KR', cur: 'Kurikulum TOPIK', tts: 'ko-KR', exams: 'TOPIK I / TOPIK II / EPS-TOPIK' },
+  ja: { name: 'Jepang', flag: 'JP', cur: 'Kurikulum JLPT', tts: 'ja-JP', exams: 'JLPT / JFT-Basic' }
 };
 const LEVELS = DG.levels.map(l => l.code);
 
@@ -139,8 +141,8 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = fal
 /* Pilihan suara per gender untuk dialog: cari voice bernama perempuan/laki-laki
    sesuai bahasa; bila tidak ada pasangan jelas, bedakan lewat pitch
    (perempuan 1.25, laki-laki 0.85) supaya SELALU terdengar beda. */
-const FEMALE_VOICE_HINTS = ['female', 'zira', 'samantha', 'victoria', 'karen', 'moira', 'fiona', 'veena', 'susan', 'catherine', 'yuna', 'sun-hee', 'sunhee', 'seoyeon', 'haruka', 'nanami', 'kyoko', 'ayumi', 'ichika'];
-const MALE_VOICE_HINTS = ['male', 'david', 'daniel', 'alex', 'fred', 'thomas', 'injoon', 'in-joon', 'junseo', 'ichiro', 'takumi', 'hattori', 'kenji', 'george', 'ryan', 'christopher'];
+const FEMALE_VOICE_HINTS = ['female', 'zira', 'samantha', 'victoria', 'karen', 'moira', 'fiona', 'veena', 'susan', 'catherine', 'yuna', 'sun-hee', 'sunhee', 'sunhi', 'heami', 'seoyeon', 'jiwon', 'haruka', 'nanami', 'kyoko', 'ayumi', 'ichika', 'sayaka', 'mizuki', 'aria', 'jenny', 'sonia', '한국의', '日本語'];
+const MALE_VOICE_HINTS = ['male', 'david', 'daniel', 'alex', 'fred', 'thomas', 'injoon', 'in-joon', 'junseo', 'seunghan', 'hyunjun', 'ichiro', 'takumi', 'otoya', 'hattori', 'kenji', 'keita', 'george', 'ryan', 'christopher', 'guy', 'aaron'];
 function voiceGenderOf(name) {
   const n = String(name || '').toLowerCase();
   if (FEMALE_VOICE_HINTS.some(h => n.includes(h))) return 'female';
@@ -161,6 +163,13 @@ const MALE_VOICE_PRIORITY = {
   ko: ['injoon', 'in-joon', 'junseo', 'seunghan'],
   ja: ['ichiro', 'takumi', 'otoya', 'hattori', 'kenji', 'keita']
 };
+/* Voice PEREMPUAN prioritas per bahasa (paling natural dulu) — nama voice
+   nyata di Windows (Microsoft Natural) + macOS + Google Chrome. */
+const FEMALE_VOICE_PRIORITY = {
+  en: ['aria', 'jenny', 'zira', 'samantha', 'sonia', 'natasha', 'google us english'],
+  ko: ['heami', 'sunhi', 'sun-hi', 'yuna', 'seoyeon', 'jiwon', '한국의'],
+  ja: ['haruka', 'nanami', 'sayaka', 'ayumi', 'kyoko', 'ichika', 'mizuki', '日本語']
+};
 function allVoices() { try { return (window.speechSynthesis && speechSynthesis.getVoices()) || []; } catch (e) { return []; } }
 function voicesForLang(langCode) {
   const voices = allVoices();
@@ -174,8 +183,17 @@ function voicesForLang(langCode) {
 function pickFemaleVoice(langCode, pool) {
   const chosen = S.voices && S.voices[langCode + ':female'];
   if (chosen) { const v = allVoices().find(x => x.name === chosen); if (v) return { voice: v, pitch: 1.12, rate: 1 }; }
+  const prefix = String(langCode || '').slice(0, 2).toLowerCase();
+  const prio = FEMALE_VOICE_PRIORITY[prefix] || [];
+  const byPrio = prio.map(h => pool.find(v => String(v.name || '').toLowerCase().includes(h))).filter(Boolean);
+  if (byPrio[0]) return { voice: byPrio[0], pitch: 1.12, rate: 1 };
   const female = pool.find(v => voiceGenderOf(v.name) === 'female') || null;
-  return { voice: female || pool[0] || null, pitch: female ? 1.12 : 1.25, rate: 1 };
+  if (female) return { voice: female, pitch: 1.12, rate: 1 };
+  /* Tidak ada voice perempuan yang dikenali: pakai voice pertama pada nada
+     natural (1.0), JANGAN dinaikkan ke 1.25 — nada tinggi pada voice yang
+     sebenarnya laki-laki terdengar aneh ("ngaco"). User bisa memilih voice
+     persis di Pengaturan. */
+  return { voice: pool[0] || null, pitch: 1.0, rate: 1 };
 }
 /* Pilihan LAKI-LAKI (PERBAIKAN2): pitch TIDAK lagi diturunkan jauh —
    voice bernama laki-laki dipakai pada nada natural 1.0 (dulu 0.92/0.85
@@ -197,7 +215,12 @@ function pickMaleVoice(langCode, pool) {
   const hintedDiff = hinted.find(v => providerOf(v) !== femaleProvider);
   if (hintedDiff) return { voice: hintedDiff, pitch: 1.0, rate: 1 };
   if (hinted[0]) return { voice: hinted[0], pitch: 1.0, rate: 1 };
-  return { voice: pool[0] || null, pitch: 0.97, rate: 1 };
+  /* Tidak ada voice laki-laki sama sekali di perangkat ini (mis. hanya ada
+     voice Google yang bawaannya perempuan): pakai voice pertama dengan nada
+     DITURUNKAN ke 0.82 supaya terdengar jelas berbeda dari suara perempuan.
+     Ini tetap bukan suara laki-laki asli — voice laki-laki asli didapat
+     dengan memasang paket bahasa Korea/Jepang di Windows (lihat Pengaturan). */
+  return { voice: pool[0] || null, pitch: 0.82, rate: 1 };
 }
 function pickDialogVoice(langCode, gender) {
   const pool = voicesForLang(langCode);
@@ -400,6 +423,7 @@ function renderTopbar() {
     '<nav class="topnav" aria-label="Menu utama">' + groups +
     '<button type="button" class="tn-btn tn-direct' + (route.name === 'tutor' ? ' active' : '') + '" data-nav="tutor">Tutor AI</button></nav>' +
     '<div class="search-wrap"><div class="searchbox"><span aria-hidden="true">🔍</span><input id="global-search" type="search" placeholder="Cari modul, vocab… (Ctrl+K)" autocomplete="off" aria-label="Pencarian"></div><div id="search-results" class="search-results" hidden></div></div>' +
+    '<button type="button" class="search-toggle" id="search-toggle" aria-label="Cari">🔍</button>' +
     '<div class="lang-picker" role="group" aria-label="Pilih bahasa">' +
     ['en', 'ko', 'ja'].map(L => '<button type="button" class="lang-btn' + (S.lang === L ? ' active' : '') + '" data-lang="' + L + '">' + LANGMETA[L].flag + ' <span class="lang-name">' + LANGMETA[L].name + '</span></button>').join('') + '</div>' +
     '<button type="button" class="theme-btn" id="theme-toggle" aria-label="Ganti mode gelap/terang">🌙</button>' +
@@ -421,6 +445,8 @@ function renderTopbar() {
   const li2 = $('#login-btn-top'); if (li2) li2.onclick = () => { closeMenus(); openAuth(); };
   const inp = $('#global-search');
   const sbox = $('#search-results');
+  const stBtn = $('#search-toggle');
+  if (stBtn) stBtn.onclick = e => { e.stopPropagation(); const tb = $('#topbar'); if (!tb) return; const open = tb.classList.toggle('search-open'); if (open && inp) inp.focus(); };
   let curResults = [];
   const hideSBox = () => { if (sbox) sbox.hidden = true; };
   const renderSearchResults = () => {
@@ -430,22 +456,23 @@ function renderTopbar() {
     if (!curResults.length) { sbox.innerHTML = '<div class="search-empty">Tidak ditemukan untuk "' + esc(inp.value.trim()) + '" — coba kata lain.</div>'; sbox.hidden = false; return; }
     sbox.innerHTML = curResults.map((r, i) => '<button type="button" class="search-item" data-sr="' + i + '"><span class="chip">' + esc(r.kind) + '</span><span class="search-item-main"><b>' + esc(r.title) + '</b><small>' + esc(r.sub) + (r.lang && r.lang !== S.lang ? ' · Bahasa ' + LANGMETA[r.lang].name : '') + '</small></span></button>').join('');
     sbox.hidden = false;
-    $$('[data-sr]', sbox).forEach(b => b.onclick = () => { const r = curResults[+b.dataset.sr]; hideSBox(); runSearchAction(r); });
+    $$('[data-sr]', sbox).forEach(b => b.onclick = () => { const r = curResults[+b.dataset.sr]; hideSBox(); const tb = $('#topbar'); if (tb) tb.classList.remove('search-open'); runSearchAction(r); });
   };
   inp.addEventListener('input', renderSearchResults);
   inp.addEventListener('focus', renderSearchResults);
   inp.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); if (curResults.length && sbox && !sbox.hidden) { const r = curResults[0]; hideSBox(); runSearchAction(r); } else if (inp.value.trim()) go('search', { q: inp.value.trim() }); }
+    if (e.key === 'Enter') { e.preventDefault(); const tb = $('#topbar'); if (tb) tb.classList.remove('search-open'); if (curResults.length && sbox && !sbox.hidden) { const r = curResults[0]; hideSBox(); runSearchAction(r); } else if (inp.value.trim()) go('search', { q: inp.value.trim() }); }
     if (e.key === 'Escape') hideSBox();
   });
   if (!document._v22DocBound) {
     document._v22DocBound = true;
     document.addEventListener('click', e => {
       const b = $('#search-results'); if (b && e.target && e.target.closest && !e.target.closest('.search-wrap')) b.hidden = true;
+      const tb = $('#topbar'); if (tb && e.target && e.target.closest && !e.target.closest('.search-wrap') && !e.target.closest('#search-toggle')) tb.classList.remove('search-open');
       if (e.target && e.target.closest && !e.target.closest('.tn-group')) closeMenus();
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeMenus(); closeDrawer(); }
+      if (e.key === 'Escape') { closeMenus(); closeDrawer(); const tb = $('#topbar'); if (tb) tb.classList.remove('search-open'); }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); const s = $('#global-search'); if (s) { s.focus(); s.select(); } }
     });
   }
@@ -2194,7 +2221,7 @@ function pageTutor(c) {
       '<button type="button" class="btn ' + (priv ? '' : 'white') + ' small" id="tu-priv">Mode Privat: ' + (priv ? 'AKTIF' : 'nonaktif') + '</button></div>' +
       '<p class="small muted" style="margin-top:8px">Yang dikirim ke AI hanya pertanyaan yang kamu ketik di chat ini + bahasa & jenjangmu — BUKAN nama, email, XP, progres, atau data akunmu. Mode Privat mematikan Tutor AI sepenuhnya: tidak ada satu huruf pun yang keluar dari web; yang menjawab hanya bantuan berbasis aturan dari materi DidiGo.</p></div>' +
       '<div class="card" style="margin-top:14px"><div id="tu-msgs">' +
-      (hist().length ? hist().map(m => '<div class="tu-msg ' + (m.r === 'u' ? 'u' : 'a') + '"><b>' + (m.r === 'u' ? 'Kamu' : 'Tutor') + '</b><p>' + esc(m.t) + '</p>' + (m.links && m.links.length ? '<div class="chiprow" style="margin-top:8px">' + m.links.map(l => '<button type="button" class="chip" data-tu-link="' + l[1] + '">' + esc(l[0]) + ' →</button>').join('') + '</div>' : '') + '</div>').join('')
+      (hist().length ? hist().map(m => '<div class="tu-msg ' + (m.r === 'u' ? 'u' : 'a') + '"><b>' + (m.r === 'u' ? 'Kamu' : 'Tutor') + '</b><p>' + (m.r === 'a' ? md(m.t) : esc(m.t)) + '</p>' + (m.links && m.links.length ? '<div class="chiprow" style="margin-top:8px">' + m.links.map(l => '<button type="button" class="chip" data-tu-link="' + l[1] + '">' + esc(l[0]) + ' →</button>').join('') + '</div>' : '') + '</div>').join('')
         : '<p class="muted">Halo! Tanyakan apa saja soal Bahasa ' + LANGMETA[S.lang].name + ': arti kata, grammar, koreksi kalimat, atau latihan percakapan. Contoh: "kenapa pakai partikel itu?", "koreksi kalimat saya", "latihan percakapan di restoran".</p>') +
       '</div>' +
       '<div class="chiprow" style="margin-top:12px">' + ['Jelaskan grammar yang sering saya salah', 'Koreksi kalimat saya: ', 'Latihan percakapan: di restoran', 'Jelaskan kesalahan saya terakhir'].map(q => '<button type="button" class="chip" data-tu-q="' + esc(q) + '">' + esc(q) + '</button>').join('') + '</div>' +
@@ -2286,15 +2313,15 @@ function pageSettings(c) {
   vsec.className = 'card'; vsec.style.marginTop = '16px'; vsec.style.maxWidth = '560px';
   const ttsOf = { en: 'en-US', ko: 'ko-KR', ja: 'ja-JP' };
   const sample = { en: 'Hello, how are you today?', ko: '안녕하세요, 오늘 기분이 어때요?', ja: 'こんにちは、今日は元気ですか。' };
-  let vhtml = '<div class="sect-label" style="margin-top:0">Pengatur suara dialog (laki-laki & perempuan)</div><p class="muted" style="margin-bottom:10px">Suara perempuan tidak diubah (sudah bagus). Suara laki-laki dipilih dari voice laki-laki terbaik dari SUMBER yang BERBEDA dengan suara perempuan (mis. perempuan dari Google, laki-laki dari Microsoft) dengan nada natural. Kamu juga bisa memilih sendiri voice per bahasa dari voice yang terpasang di perangkatmu — pilihan tersimpan. Semua suara ini gratis dari perangkatmu (Web Speech API); suara cloud berkualitas studio (Google Cloud TTS, Azure, ElevenLabs) butuh API key/berbayar dan tidak dipakai di sini.</p>';
+  let vhtml = '<div class="sect-label" style="margin-top:0">Pengatur suara dialog (laki-laki & perempuan)</div><p class="muted" style="margin-bottom:10px">Suara perempuan dipilih dari voice perempuan terbaik per bahasa (mis. Heami untuk Korea, Haruka/Nanami untuk Jepang) dan suara laki-laki dari voice laki-laki terbaik dari SUMBER yang BERBEDA bila memungkinkan (mis. perempuan dari Google, laki-laki dari Microsoft), keduanya dengan nada natural. Kamu juga bisa memilih sendiri voice per bahasa dari voice yang terpasang di perangkatmu — pilihan tersimpan. Semua suara ini gratis dari perangkatmu (Web Speech API); suara cloud berkualitas studio (Google Cloud TTS, Azure, ElevenLabs) butuh API key/berbayar dan tidak dipakai di sini.</p>';
   for (const L2 of ['en', 'ko', 'ja']) {
     const vs = voicesForLang(ttsOf[L2]);
     const optFor = g => '<option value="">Otomatis (pilihan DidiGo)</option>' + vs.map(v => '<option value="' + esc(v.name) + '"' + (S.voices[ttsOf[L2] + ':' + g] === v.name ? ' selected' : '') + '>' + esc(v.name) + ' — ' + providerOf(v) + ' (' + esc(v.lang) + ')</option>').join('');
     const hasMale = vs.some(v => voiceGenderOf(v.name) === 'male');
     const hasFemale = vs.some(v => voiceGenderOf(v.name) === 'female');
     vhtml += '<div style="margin-top:14px"><b>Bahasa ' + LANGMETA[L2].name + '</b>' +
-      '<div style="display:grid;gap:8px;margin-top:8px"><label class="small">Suara laki-laki <select id="vs-' + L2 + '-male" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:#fff">' + optFor('male') + '</select></label>' +
-      '<label class="small">Suara perempuan <select id="vs-' + L2 + '-female" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:#fff">' + optFor('female') + '</select></label></div>' +
+      '<div style="display:grid;gap:8px;margin-top:8px"><label class="small">Suara laki-laki <select id="vs-' + L2 + '-male" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)">' + optFor('male') + '</select></label>' +
+      '<label class="small">Suara perempuan <select id="vs-' + L2 + '-female" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)">' + optFor('female') + '</select></label></div>' +
       '<div class="quiz-actions"><button type="button" class="btn white small" data-tryv="' + L2 + ':male">🔊 Coba dengar laki-laki</button><button type="button" class="btn white small" data-tryv="' + L2 + ':female">🔊 Coba dengar perempuan</button></div>' +
       (!hasMale ? '<p class="small" style="color:var(--amber);margin-top:6px">Di perangkat ini tidak ada suara laki-laki ' + LANGMETA[L2].name + ' yang bagus terdeteksi — memakai suara standar dengan nada yang disesuaikan sedikit.</p>' : '') +
       (!hasFemale ? '<p class="small" style="color:var(--amber);margin-top:6px">Di perangkat ini tidak ada suara perempuan ' + LANGMETA[L2].name + ' yang bagus terdeteksi — memakai suara standar dengan nada yang disesuaikan sedikit.</p>' : '') + '</div>';
@@ -2315,7 +2342,7 @@ function pageSettings(c) {
     const pick = g === 'female' ? pickFemaleVoice(u.lang) : pickMaleVoice(u.lang);
     if (chosen) { try { u.voice = chosen; } catch (e) {} u.pitch = g === 'female' ? 1.12 : 1.0; }
     else if (pick.voice) { try { u.voice = pick.voice; } catch (e) {} u.pitch = pick.pitch; }
-    else u.pitch = g === 'female' ? 1.25 : 0.97;
+    else u.pitch = g === 'female' ? 1.0 : 0.97;
     speechSynthesis.speak(u);
   });
 }
