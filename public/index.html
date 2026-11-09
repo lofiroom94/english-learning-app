@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>English Learning App — Belajar Bahasa Inggris</title>
+<title>English Learning App — Belajar Bahasa Inggris & Korea A0–C2 (v8: Tombol Dengarkan)</title>
 <meta name="description" content="Belajar Bahasa Inggris dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, dan kata hari ini. Progres dan XP tersimpan di akunmu.">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,6 +17,10 @@
       </span>
       <span class="brand-name">English Learning App</span>
     </a>
+    <div class="lang-switch" role="group" aria-label="Pilih bahasa">
+      <button id="lang-btn-en" class="lang-btn is-active" type="button">English</button>
+      <button id="lang-btn-ko" class="lang-btn" type="button">한국어 Korea</button>
+    </div>
     <div id="auth-bar">
       <span id="user-info">Belum masuk</span>
       <span id="xp-badge" class="pill pill-xp">⭐ 0 XP</span>
@@ -32,8 +36,8 @@
   <!-- 1. HERO -->
   <section class="hero">
     <p class="hero-eyebrow">Belajar Bahasa Inggris · A0 sampai C2</p>
-    <h2 class="hero-title">Belajar Bahasa Inggris, selangkah demi selangkah</h2>
-    <p class="hero-sub">42 pelajaran berurutan dari pemula mutlak sampai sangat mahir — setiap soal, kosakata, dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.</p>
+    <h2 class="hero-title" id="hero-title">Belajar Bahasa Inggris, selangkah demi selangkah</h2>
+    <p class="hero-sub" id="hero-sub">42 pelajaran berurutan dari pemula mutlak sampai sangat mahir — setiap soal, kosakata, dan contoh kalimat ada arti Bahasa Indonesianya, jadi kamu selalu mengerti kenapa jawabannya begitu.</p>
     <div class="hero-actions">
       <a class="btn btn-primary btn-lg" href="#jalur-belajar">Mulai belajar</a>
       <a class="btn btn-outline btn-lg" href="#catatan">Baca catatan penting</a>
@@ -98,6 +102,89 @@
     </div>
   </section>
 
+
+  <!-- v6: KARTU ENGLISH BESAR ala Volingo (layout sama, warna beda, angka nyata) -->
+  <section class="showcase" aria-label="English">
+    <div class="showcase-left">
+      <div class="showcase-head">
+        <span class="showcase-mark" aria-hidden="true">EN</span>
+        <span class="showcase-chip" id="showcase-chip">ENGLISH &bull; A0&ndash;C2 &bull; 42 PELAJARAN</span>
+      </div>
+      <h2 class="showcase-title" id="showcase-title">English</h2>
+      <div class="chart-card">
+        <div class="chart-head"><span>JALUR LEVEL</span><span><b>42</b> pelajaran</span></div>
+        <div class="bar-chart" role="img" aria-label="Grafik jumlah pelajaran per level: A0 6, A1 6, A2 6, B1 6, B2 6, C1 6, C2 6">
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>A0</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>A1</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>A2</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>B1</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>B2</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>C1</b><small>6</small></div>
+          <div class="bar-col"><span class="bar" style="height:84px"></span><b>C2</b><small>6</small></div>
+        </div>
+        <p class="chart-note" id="chart-note">A0 = langkah pertama: kenalan huruf, bunyi, dan salam. Ikuti jalurnya dari atas ke bawah.</p>
+      </div>
+      <div class="signature-card">
+        <p class="signature-eyebrow">Signature feature</p>
+        <p class="signature-title" id="signature-title">Jalur A0&ndash;C2 &mdash; 42 pelajaran berurutan, 10 soal di setiap latihan</p>
+      </div>
+    </div>
+    <div class="showcase-right">
+      <p class="section-eyebrow">Yang kamu dapat</p>
+      <ul class="checklist" id="showcase-checklist">
+        <li>42 pelajaran berurutan dari A0 sampai C2 &mdash; 6 pelajaran di setiap level</li>
+        <li>10 soal di setiap latihan, tanpa soal yang mengulang, ditutup pop-up hasil: benar berapa, salah berapa, nilai, dan XP</li>
+        <li>Arti Bahasa Indonesia di soal, contoh kalimat, catatan, dan kosakata</li>
+        <li>13 Catatan Penting tata bahasa: am/is/are, do/does, a/an, kata ganti, dan lainnya</li>
+        <li>Jenis Kata (kata benda, kata kerja, kata sifat, dan lainnya) + Kata Hari Ini yang berganti setiap hari</li>
+        <li>Bank Soal: 4 bentuk soal &mdash; arti kata, kata dari arti, lengkapi kalimat, arti kalimat &mdash; total 420 soal</li>
+        <li>Dashboard Master, Roadmap level, dan Study Tracker mingguan (detailnya di bawah)</li>
+        <li>XP dan streak belajar tersimpan di akunmu &mdash; masuk supaya progres tidak reset</li>
+      </ul>
+      <div class="showcase-note" id="showcase-note">Fokus belajarnya mencakup 4 skill &mdash; Grammar (Catatan Penting), Vocab (Jenis Kata dan soal), Reading (contoh kalimat dan artinya), dan Writing (menjawab dan melengkapi kalimat). Khusus Bahasa Inggris saja, dengan penjelasan Bahasa Indonesia.</div>
+    </div>
+  </section>
+
+  <!-- v6: DASHBOARD MASTER -->
+  <section class="section-block" aria-label="Dashboard Master">
+    <p class="section-eyebrow">Dashboard Master</p>
+    <h2 class="section-title">&#128202; Dashboard Master &mdash; Progres per Level</h2>
+    <p class="section-sub">Persentase selesai untuk Bahasa Inggris dan untuk setiap level A0 sampai C2, dihitung dari pelajaran yang sudah kamu selesaikan.</p>
+    <div id="dashboard-master" class="panel-card"></div>
+  </section>
+
+  <!-- v6: ROADMAP -->
+  <section class="section-block" aria-label="Roadmap">
+    <p class="section-eyebrow">Roadmap</p>
+    <h2 class="section-title">&#128506;&#65039; Roadmap &mdash; Jalur Levelmu</h2>
+    <p class="section-sub">Tahapan level dari A0 sampai C2: mana yang sudah selesai, mana yang sedang berjalan, dan pelajaran berikutnya untukmu.</p>
+    <div id="roadmap" class="panel-card"></div>
+  </section>
+
+  <!-- v6: STUDY TRACKER -->
+  <section class="section-block" aria-label="Study Tracker">
+    <p class="section-eyebrow">Study Tracker</p>
+    <h2 class="section-title">&#128197; Study Tracker &mdash; Minggu Ini</h2>
+    <p class="section-sub">Hari-hari kamu menyelesaikan pelajaran minggu ini (Senin&ndash;Minggu), tercatat di perangkat ini, lengkap dengan streak belajarmu.</p>
+    <div class="panel-card">
+      <div id="tracker-week" class="tracker-week"></div>
+      <p id="tracker-summary" class="tracker-summary"></p>
+    </div>
+  </section>
+
+  <!-- v6: BANK SOAL -->
+  <section class="section-block" aria-label="Bank Soal">
+    <p class="section-eyebrow">Bank Soal</p>
+    <h2 class="section-title">&#128218; Bank Soal &mdash; 4 Bentuk Soal, 420 Soal</h2>
+    <p class="section-sub">Setiap latihan berisi 10 soal yang dibuat dari kosakata pelajaran itu sendiri, dalam 4 bentuk berbeda &mdash; jadi soal tiap pelajaran tidak sama.</p>
+    <div class="bank-grid">
+      <article class="bank-card"><h3>1. Arti Kata</h3><p>Diberikan kata Bahasa Inggris, pilih arti Bahasa Indonesianya yang tepat.</p></article>
+      <article class="bank-card"><h3>2. Kata dari Arti</h3><p>Diberikan arti Bahasa Indonesia, pilih kata Bahasa Inggrisnya yang tepat.</p></article>
+      <article class="bank-card"><h3>3. Lengkapi Kalimat</h3><p>Isi kata yang hilang di contoh kalimat, dibantu kotak konteks dan artinya.</p></article>
+      <article class="bank-card"><h3>4. Arti Kalimat</h3><p>Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa Inggris.</p></article>
+    </div>
+  </section>
+
   <!-- LOGIN / DAFTAR -->
   <section id="auth-box" class="auth-card" hidden>
     <p class="section-eyebrow">Akun</p>
@@ -120,6 +207,7 @@
     <div class="mission-body">
       <h2>Misi Hari Ini</h2>
       <p>Selesaikan 1 pelajaran hari ini untuk menjaga streak belajarmu.</p>
+      <p id="mission-status" class="mission-status">Selesaikan 1 pelajaran hari ini untuk memulai streak belajarmu.</p>
     </div>
     <a class="btn btn-primary" href="#jalur-belajar">Lihat pelajaran</a>
   </section>
@@ -127,31 +215,115 @@
   <!-- 4. CATATAN PENTING -->
   <section id="catatan" class="section-block">
     <p class="section-eyebrow">Wajib tahu</p>
-    <h2 class="section-title">📝 Catatan Penting</h2>
-    <p class="section-sub">Aturan dasar yang paling sering dipakai — am/is/are, do/does, sampai kenapa “a university” bukan “an university”. Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
+    <h2 class="section-title" id="notes-title">📝 Catatan Penting</h2>
+    <p class="section-sub" id="notes-sub">Aturan dasar yang paling sering dipakai — am/is/are, do/does, sampai kenapa “a university” bukan “an university”. Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
     <div id="notes" class="notes-grid"></div>
   </section>
 
   <!-- 5. JENIS KATA -->
   <section class="section-block">
     <p class="section-eyebrow">Jenis kata</p>
-    <h2 class="section-title">🏷️ Jenis Kata (Parts of Speech)</h2>
-    <p class="section-sub">Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya. Kata Hari Ini berganti otomatis setiap hari.</p>
+    <h2 class="section-title" id="words-title">🏷️ Jenis Kata (Parts of Speech)</h2>
+    <p class="section-sub" id="words-sub">Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya. Kata Hari Ini berganti otomatis setiap hari.</p>
     <div id="word-classes" class="word-grid"></div>
   </section>
 
   <!-- 6. JALUR BELAJAR -->
   <section id="jalur-belajar" class="section-block">
     <p class="section-eyebrow">Jalur belajar</p>
-    <h2 class="section-title">🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
-    <p class="section-sub">Ikuti jalurnya dari atas ke bawah. <b>Setiap pelajaran berisi 10 soal</b> — jumlah soalnya juga tertulis di setiap kartu pelajaran. Klik Mulai dan latihan akan terbuka di <b>halaman latihan tersendiri</b>, bukan di bawah halaman ini. Setiap pelajaran yang selesai memberi XP dan ditandai “Selesai”.</p>
+    <h2 class="section-title" id="jalur-title">🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
+    <p class="section-sub">Ikuti jalurnya dari atas ke bawah. <b>Setiap pelajaran berisi 10 soal</b> — jumlah soalnya juga tertulis di setiap kartu pelajaran. Klik Mulai dan latihan akan terbuka di <b>halaman latihan tersendiri</b>, bukan di bawah halaman ini. <b>Streak:</b> menyelesaikan 1 pelajaran akan menghidupkan streak hari itu; belajar lagi di hari berikutnya membuat streak bertambah 1, dan kalau satu hari terlewat streak mulai lagi dari 1. Setiap pelajaran yang selesai memberi XP dan ditandai “Selesai”.</p>
     <div id="lessons"></div>
   </section>
 
 
+
+  <!-- v7: KONTEN VOLINGO LIVE — ENGLISH -->
+  <div id="v7-en">
+  <section class="section-block" aria-label="IELTS Writing Blueprint">
+    <p class="section-eyebrow">IELTS Writing Blueprint</p>
+    <h2 class="section-title">✍️ IELTS Writing Blueprint + 10 Sample Essays Band 7–9</h2>
+    <p class="section-sub">Setiap esai dilengkapi template struktur paragraf dan catatan Bahasa Indonesia tentang kenapa esai itu bisa mendapat band tinggi. Klik judul untuk membuka.</p>
+    <div id="essays"></div>
+  </section>
+  <section class="section-block" aria-label="Mock Test 4-in-1">
+    <p class="section-eyebrow">4-in-1 Mock Test</p>
+    <h2 class="section-title">⏱️ Mock Test IELTS · TOEFL · TOEIC · Cambridge — Timer, Skor & Pembahasan</h2>
+    <p class="section-sub">4 paket simulasi, masing-masing 10 soal dengan timer. Setelah selesai kamu dapat skor dan pembahasan Bahasa Indonesia untuk SETIAP soal.</p>
+    <div id="mock-list" class="bank-grid"></div>
+  </section>
+  <section class="section-block" aria-label="Speaking Simulation">
+    <p class="section-eyebrow">Speaking Simulation</p>
+    <h2 class="section-title">🎙️ IELTS Speaking Part 2 — 24 Topik Cue Card</h2>
+    <p class="section-sub">Latihan bicara 1–2 menit per topik. Setiap kartu berisi panduan "you should say" dan tips Bahasa Indonesia. Gunakan timer HP-mu: 1 menit persiapan, lalu bicara tanpa berhenti.</p>
+    <div id="speaking" class="notes-grid"></div>
+  </section>
+  <section class="section-block" aria-label="Idiom dan Phrasal Verbs">
+    <p class="section-eyebrow">300+ Idiom & Phrasal Verbs</p>
+    <h2 class="section-title">💬 349 Idiom & Phrasal Verbs + Arti & Contoh</h2>
+    <p class="section-sub">Ketik di kotak pencarian untuk menyaring. Setiap entri ada arti Bahasa Indonesia, contoh kalimat, dan terjemahannya.</p>
+    <input id="idiom-search" type="search" placeholder="Cari idiom / phrasal verb… mis. give up" style="width:100%;padding:12px;border-radius:10px;margin-bottom:12px">
+    <p id="idiom-count" class="section-sub"></p>
+    <div id="idioms" class="notes-grid"></div>
+  </section>
+  <section class="section-block" aria-label="TOEIC Business English">
+    <p class="section-eyebrow">TOEIC Business English</p>
+    <h2 class="section-title">💼 Business English — Email, Meeting, Negosiasi, Presentasi</h2>
+    <p class="section-sub">Frasa siap pakai untuk 4 situasi kerja, semuanya dengan arti Bahasa Indonesia.</p>
+    <div id="business"></div>
+  </section>
+  <section class="section-block" aria-label="Cambridge Dual Prep">
+    <p class="section-eyebrow">Cambridge 5-Level</p>
+    <h2 class="section-title">🎓 Cambridge Dual Prep — KET · PET · FCE · CAE · CPE</h2>
+    <p class="section-sub">Format ujian, tips, dan contoh soal untuk kelima level Cambridge English.</p>
+    <div id="cambridge" class="notes-grid"></div>
+  </section>
+  </div>
+
+  <!-- v7: KONTEN VOLINGO LIVE — KOREA -->
+  <div id="v7-ko" hidden>
+  <section class="section-block" aria-label="Bank Soal TOPIK">
+    <p class="section-eyebrow">Bank Soal TOPIK</p>
+    <h2 class="section-title">🇰🇷 Bank Soal TOPIK I & II — Kunci Jawaban + Strategy Tip</h2>
+    <p class="section-sub">40 soal (20 TOPIK I + 20 TOPIK II). Kerjakan sebagai kuis dengan timer, atau buka daftar soal untuk melihat kunci dan strategi setiap soal.</p>
+    <div id="topik-list" class="bank-grid"></div>
+    <div id="topik-bank"></div>
+  </section>
+  <section class="section-block" aria-label="Mock Test TOPIK">
+    <p class="section-eyebrow">Mock Test TOPIK</p>
+    <h2 class="section-title">⏱️ Mock Test TOPIK Full — Reading · Listening · Writing (Timer)</h2>
+    <p class="section-sub">Reading 10 soal dan Listening 10 soal (sekarang DIBACAKAN dengan suara TTS gratis — transkrip disembunyikan seperti ujian asli, muncul setelah suara selesai) dikerjakan dengan timer dan dinilai otomatis. Writing berisi 5 tugas dengan contoh jawaban model dan tips.</p>
+    <div id="komock-list" class="bank-grid"></div>
+    <div id="komock-writing"></div>
+  </section>
+  <section class="section-block" aria-label="Listening TOPIK Dengarkan">
+    <p class="section-eyebrow">Listening TOPIK — Dengarkan</p>
+    <h2 class="section-title">🎧 Listening TOPIK — 10 Dialog Dibacakan (TTS Gratis)</h2>
+    <p class="section-sub">Ketuk <b>🔊 Dengarkan Dialog</b>: dialog Korea dibacakan oleh suara bawaan HP/browser-mu (tanpa file audio, tanpa biaya). Seperti ujian asli, <b>transkrip disembunyikan saat mendengarkan</b> dan muncul otomatis setelah suara selesai — atau ketuk tombol transkrip untuk membukanya lebih awal. Kecepatan suara diatur di bilah 🔊 di bawah layar (Lambat / Normal), dan tombol ⏹ Berhenti menghentikan suara kapan pun.</p>
+    <div id="topik-listening-list" class="bank-grid"></div>
+  </section>
+  <section class="section-block" aria-label="Vocab Priority Korea">
+    <p class="section-eyebrow">Vocab Priority List</p>
+    <h2 class="section-title">📚 Vocab Priority Korea — 180 Kata Tersortir Frekuensi & Tema</h2>
+    <p class="section-sub">Kata-kata yang paling sering muncul di TOPIK dan percakapan harian, lengkap dengan romanisasi dan arti Bahasa Indonesia. Ketik untuk mencari.</p>
+    <input id="kovocab-search" type="search" placeholder="Cari kata Korea / arti…" style="width:100%;padding:12px;border-radius:10px;margin-bottom:12px">
+    <div id="kovocab" class="notes-grid"></div>
+  </section>
+  <section class="section-block" aria-label="K-Drama Checklist">
+    <p class="section-eyebrow">K-Drama Learning Checklist</p>
+    <h2 class="section-title">🎬 K-Drama Learning Checklist per Level</h2>
+    <p class="section-sub">Checklist belajar dari drama Korea, disusun per level — centang yang sudah kamu tonton dan pelajari.</p>
+    <div id="kdrama"></div>
+  </section>
+  <section class="section-block" aria-label="GKS dan EPS">
+    <p class="section-eyebrow">GKS & EPS-TOPIK</p>
+    <h2 class="section-title">🎓 Beasiswa GKS Writing Prep & EPS-TOPIK Kerja ke Korea</h2>
+    <div id="gks-eps"></div>
+  </section>
+  </div>
 </main>
 
-<!-- HALAMAN LATIHAN (v4) — terbuka sebagai halaman tersendiri saat Mulai diklik -->
+<!-- HALAMAN LATIHAN (v5) — terbuka sebagai halaman tersendiri saat Mulai diklik -->
 <main id="lesson-view" class="lesson-view-main" hidden>
   <div class="lesson-toprow">
     <button id="btn-back-home" class="btn btn-ghost">← Kembali ke Beranda</button>
@@ -175,7 +347,29 @@
   </section>
 </main>
 
-<!-- POP-UP HASIL LATIHAN (v4) -->
+
+<!-- HALAMAN MOCK TEST (v7) -->
+<main id="mock-view" class="lesson-view-main" hidden>
+  <div class="lesson-toprow">
+    <button id="btn-mock-back" class="btn btn-ghost">← Kembali ke Beranda</button>
+    <span id="mock-timer" class="quiz-counter-chip">⏱️ 00:00</span>
+  </div>
+  <section class="quiz-card">
+    <p class="section-eyebrow">Mock Test</p>
+    <h2 id="mock-title"></h2>
+    <p id="mock-meta" class="lesson-meta"></p>
+    <div class="quiz-meta-row"><span id="mock-counter" class="quiz-counter-chip">Soal 1 dari 10</span><span id="mock-live" class="quiz-score-chip">✅ Benar: 0 · ❌ Salah: 0</span></div>
+    <div class="quiz-progress-track"><span id="mock-progress-fill" class="quiz-progress-fill"></span></div>
+    <div id="mock-tts"></div>
+    <p id="mock-q" class="quiz-q"></p>
+    <div id="mock-options"></div>
+    <p id="mock-feedback" class="quiz-feedback" role="status"></p>
+    <button id="mock-next" class="btn btn-primary btn-lg" hidden>Lanjut →</button>
+    <div id="mock-review"></div>
+  </section>
+</main>
+
+<!-- POP-UP HASIL LATIHAN (v5) -->
 <div id="result-modal" class="result-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="result-title">
   <div class="result-card">
     <div id="result-emoji" class="result-emoji" aria-hidden="true">🎉</div>
@@ -187,6 +381,7 @@
     </div>
     <p id="result-score" class="result-score"></p>
     <p id="result-xp" class="result-xp"></p>
+    <p id="result-streak" class="result-streak" hidden></p>
     <div class="result-actions">
       <button id="result-next-lesson" class="btn btn-primary btn-lg" hidden>Pelajaran Berikutnya →</button>
       <button id="result-retry" class="btn btn-outline btn-lg">🔁 Ulangi Latihan Ini</button>
@@ -196,14 +391,26 @@
   </div>
 </div>
 
+<!-- v8: BILAH KONTROL DENGARKAN (TTS) -->
+<div id="tts-bar" class="tts-bar" role="region" aria-label="Kontrol suara Dengarkan">
+  <span class="tts-bar-title">🔊 Dengarkan (TTS gratis)</span>
+  <span class="tts-rate-group" role="group" aria-label="Kecepatan suara">
+    <button id="tts-rate-slow" class="tts-rate-btn" type="button">🐢 Lambat</button>
+    <button id="tts-rate-normal" class="tts-rate-btn is-active" type="button">Normal</button>
+  </span>
+  <button id="tts-stop" class="tts-stop-btn" type="button" disabled>⏹ Berhenti</button>
+  <span id="tts-status" class="tts-status">Siap — ketuk tombol 🔊 Dengarkan di materi mana pun</span>
+</div>
+<div id="tts-toast" class="tts-toast" hidden role="status"></div>
+
 <footer class="site-footer">
   <div class="footer-inner">
     <p class="footer-brand">English Learning App</p>
-    <p>Setiap soal ada arti Bahasa Indonesianya. Baca kotak konteks dulu sebelum menjawab soal isian, supaya jawabannya tidak ambigu.</p>
     <p class="footer-note">Belajar sedikit setiap hari lebih baik daripada banyak tapi jarang. Jaga streak-mu, kumpulkan XP, dan naik level dari A0 sampai C2.</p>
   </div>
 </footer>
 <script src="data.js"></script>
+<script src="content.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
