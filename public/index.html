@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Learning App — Belajar Bahasa Inggris</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <h1>English Learning App</h1>
+  <div id="auth-bar">
+    <span id="user-info">Belum masuk</span>
+    <span id="xp-badge">⭐ 0 XP</span>
+    <span id="streak-badge">🔥 0 hari</span>
+    <button id="btn-login">Masuk / Daftar</button>
+    <button id="btn-logout" hidden>Keluar</button>
+  </div>
+</header>
+
+<main>
+  <section id="auth-box" hidden>
+    <h2>Masuk / Daftar</h2>
+    <p>Dengan akun, progres dan XP kamu tersimpan di database dan tidak reset.</p>
+    <input id="auth-email" type="email" placeholder="Email">
+    <input id="auth-password" type="password" placeholder="Kata sandi (min. 6 karakter)">
+    <button id="btn-signin">Masuk</button>
+    <button id="btn-signup">Daftar akun baru</button>
+    <p id="auth-msg"></p>
+  </section>
+
+  <section>
+    <h2>🎯 Misi Hari Ini</h2>
+    <p>Selesaikan 1 pelajaran hari ini untuk menjaga streak belajarmu.</p>
+  </section>
+
+  <section>
+    <h2>📝 Catatan Penting — Wajib Tahu</h2>
+    <p>Klik judul catatan untuk membuka aturan, contoh kalimat, dan artinya.</p>
+    <div id="notes"></div>
+  </section>
+
+  <section>
+    <h2>🏷️ Jenis Kata (Parts of Speech)</h2>
+    <p>Supaya tahu kata itu termasuk kata benda, kata kerja, kata sifat, atau lainnya.
+       Kata Hari Ini berganti otomatis setiap hari.</p>
+    <div id="word-classes"></div>
+  </section>
+
+  <section>
+    <h2>🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
+    <div id="lessons"></div>
+  </section>
+
+  <section id="quiz-box" hidden>
+    <h2 id="quiz-title"></h2>
+    <div id="quiz-context"></div>
+    <p id="quiz-q"></p>
+    <p id="quiz-translation"></p>
+    <div id="quiz-options"></div>
+    <p id="quiz-feedback"></p>
+    <button id="quiz-next" hidden>Lanjut</button>
+  </section>
+</main>
+
+<footer><p>Setiap soal ada arti Bahasa Indonesianya. Baca kotak konteks dulu sebelum menjawab soal isian.</p></footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
