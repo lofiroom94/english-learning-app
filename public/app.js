@@ -261,36 +261,241 @@ function rotatedOptions(values, correctValue, seed){
   const opts = rotated.slice(0, pos).concat([correctValue], rotated.slice(pos));
   return { opts, answer: pos };
 }
+// v11: teks Bahasa Indonesia di SOAL harus bersih — tanpa romanisasi / ejaan
+// fonetik yang menempel di belakang arti. Di data kosakata Korea, arti
+// disimpan sebagai "arti Indonesia — romanisasi" (mis. "merah — ppalgansaek")
+// supaya daftar kosakata & kartu belajar tetap bisa menunjukkan pelafalan.
+// Fungsi ini hanya MEMOTONG ekor " — <tulisan Latin>" dari sebuah glos arti
+// yang berdiri sendiri, dan hanya bila kepala teksnya bukan Hangul dan
+// ekornya murni huruf Latin (pola romanisasi). Kalimat utuh (diakhiri tanda
+// baca, atau mengandung Hangul) tidak pernah diubah — jadi baris Contoh
+// "Contoh: <kalimat> — Artinya: <arti>" dan soal TOPIK seperti
+// "을/를 — di sini '을'" tetap persis seperti semula.
+function cleanIdText(s){
+  if (typeof s !== "string") return s;
+  const i = s.indexOf(" \u2014 ");
+  if (i < 0) return s;
+  const head = s.slice(0, i), tail = s.slice(i + 3);
+  if (/[\uac00-\ud7a3]/.test(head)) return s;               // kepala Hangul: bukan glos Indonesia
+  if (!/^[A-Za-z][A-Za-z\-' ]*$/.test(tail)) return s;      // ekor bukan romanisasi murni
+  if (tail.length > 40 || head.length > 90) return s;       // glos selalu pendek
+  return head.trim();
+}
+
+// ===== v12: IKON SUARA DI SAMPING SETIAP PILIHAN JAWABAN =====
+// Di samping teks SETIAP pilihan jawaban ada ikon 🔊 kecil (tombol terpisah
+// di samping tombol jawaban, BUKAN di dalamnya — jadi teks pilihan tetap
+// bersih dan menekan ikon TIDAK ikut memilih jawaban). Yang dibunyikan
+// selalu kata/kalimat BAHASA TARGET (Korea ko-KR / Inggris en-US), tidak
+// pernah arti Bahasa Indonesianya:
+//   pilihan "merah"   -> berbunyi "빨간색" (Korea) / "red" (Inggris)
+//   pilihan "빨간색"  -> berbunyi "빨간색"
+//   pilihan "red"     -> berbunyi "red"
+// Suara memakai TTS gratis yang sama (Web Speech API) dan mengikuti
+// pengaturan kecepatan Lambat/Normal di bilah Dengarkan (ttsRate).
+function ttsLangForMode(){ return LANGUAGE_CODE === "ko" ? "ko-KR" : "en-US"; }
+function speakNormKey(s){
+  return String(s == null ? "" : s).toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[^a-z0-9\uac00-\ud7a3]+/gi, " ")
+    .replace(/\s+/g, " ").trim();
+}
+var __speakMaps = null;
+function speakMaps(){
+  if (__speakMaps) return __speakMaps[LANGUAGE_CODE] || __speakMaps.en;
+  var all = {};
+  ["en", "ko"].forEach(function(mode){
+    var byId = {}, byTarget = {}, idTokens = {};
+    function regTarget(t){
+      if (!t) return; var k = speakNormKey(t); if (k && !byTarget[k]) byTarget[k] = String(t);
+    }
+    function regId(idText, targetText){
+      if (!idText || !targetText) return;
+      var clean = cleanIdText(String(idText));
+      [clean, String(idText)].forEach(function(g){
+        var k = speakNormKey(g); if (k && !byId[k]) byId[k] = String(targetText);
+        g.split(/\s*\/\s*/).forEach(function(part){
+          var pk = speakNormKey(part); if (pk && pk !== k && !byId[pk]) byId[pk] = String(targetText);
+        });
+        speakNormKey(g).split(" ").forEach(function(tok){ if (tok) idTokens[tok] = 1; });
+      });
+    }
+    function addVocabList(list){
+      (list || []).forEach(function(v){
+        if (!v || v.length < 2) return;
+        regTarget(v[0]); regId(v[1], v[0]);
+        if (v[2]) regTarget(v[2]);
+        if (v[3]) regId(v[3], v[2]);
+      });
+    }
+    try {
+      if (mode === "en") {
+        if (typeof LESSON_VOCAB_EN !== "undefined") Object.keys(LESSON_VOCAB_EN).forEach(function(k){ addVocabList(LESSON_VOCAB_EN[k]); });
+        if (typeof WORD_CLASSES_EN !== "undefined") WORD_CLASSES_EN.forEach(function(wc){ addVocabList(wc[2]); });
+        if (typeof IDIOMS !== "undefined") addVocabList(IDIOMS);
+        if (typeof PHRASAL !== "undefined") addVocabList(PHRASAL);
+      } else {
+        if (typeof LESSON_VOCAB_KO !== "undefined") Object.keys(LESSON_VOCAB_KO).forEach(function(k){ addVocabList(LESSON_VOCAB_KO[k]); });
+        if (typeof WORD_CLASSES_KO !== "undefined") WORD_CLASSES_KO.forEach(function(wc){ addVocabList(wc[2]); });
+        if (typeof KO_VOCAB !== "undefined") KO_VOCAB.forEach(function(v){ if (v && v.length >= 3){ regTarget(v[0]); regId(v[2], v[0]); } });
+        var EXTRA_KO = {
+          "pukul satu": "한 시", "pukul dua": "두 시", "pukul tiga": "세 시",
+          "pukul empat": "네 시", "pukul lima": "다섯 시", "pukul enam": "여섯 시",
+          "dokter": "의사", "perawat": "간호사", "polisi": "경찰",
+          "di kantor": "회사에 있어요", "di perpustakaan": "도서관에 있어요",
+          "di rumah": "집에 있어요", "di pasar": "시장에 있어요",
+          "jus": "주스", "teh": "차",
+          "cerah": "맑아요", "akan hujan": "비가 올 거예요", "bersalju": "눈이 올 거예요", "berangin": "바람이 불어요",
+          "jalan kaki": "걸어서", "naik bus itu": "저 버스를 타세요", "naik taksi": "택시로", "naik kereta": "기차로",
+          "berbelanja": "쇼핑해요", "menonton film": "영화를 봐요", "memasak": "요리를 해요",
+          "bahasa korea": "한국어", "orang korea": "한국 사람", "makanan korea": "한국 음식", "negara korea": "한국",
+          "maaf": "죄송합니다", "permisi": "실례합니다", "selamat tinggal": "안녕히 가세요",
+          "salju turun": "눈이 왔어요", "angin bertiup": "바람이 불어요", "cuaca panas": "날씨가 더워요",
+          "panjang": "길어요", "pendek": "짧아요",
+          "hari senin": "월요일", "hari selasa": "화요일", "hari rabu": "수요일", "hari kamis": "목요일",
+          "hari jumat": "금요일", "hari sabtu": "토요일", "hari minggu": "일요일",
+          "tidak enak": "맛없어요", "pahit": "써요", "asin": "짜요",
+          "nanti malam": "오늘 밤", "olahraga": "운동", "minum kopi": "커피를 마셔요",
+          "menyembunyikan": "숨기다", "bersembunyi": "숨다", "dengan diam": "조용히", "dengan keras": "세게",
+          "dengan marah": "화가 나서", "dengan terpaksa": "어쩔 수 없이", "dengan hati-hati / saksama": "신중하게",
+          "tidur lebih awal": "일찍 자다", "tidak setuju": "동의하지 않다", "setuju, filmnya seru": "좋아요, 영화가 재미있어요",
+          "tidak boleh": "안 돼요", "boleh": "돼요", "boleh tanpa flash": "플래시 없이 찍어도 돼요", "boleh hari ini saja": "오늘만 돼요",
+          "tetap": "그대로", "runtuh": "무너지다", "melambat": "둔화되다", "meningkat tajam": "급격히 증가하다",
+          "menyembuhkan": "치료하다", "menyebabkan / menimbulkan": "초래하다", "mencegah": "예방하다",
+          "menghentikan": "중단하다", "memindahkan": "옮기다", "meninggalkan": "떠나다", "meninggalkan gedung": "건물을 떠나다",
+          "menyangkal": "부인하다", "mengakui": "인정하다", "menebak": "추측하다", "menetapkan": "정하다",
+          "mengulangi": "반복하다", "melupakan": "잊다", "membatalkan acara": "행사를 취소하다",
+          "menjual tiket": "표를 팔다", "membuat poster": "포스터를 만들다", "membuat obat": "약을 만들다",
+          "membuang obat": "약을 버리다", "membeli obat": "약을 사다", "meminum (obat) / mengonsumsi obat": "약을 먹다",
+          "mengumumkan hasil": "결과를 발표하다", "menolak pendaftaran": "신청을 거절하다",
+          "belajar lagi": "다시 공부하다", "belum menonton": "아직 안 봤어요", "bosan": "지루해요",
+          "beban": "부담", "bantuan": "도움", "kesempatan": "기회", "persaingan": "경쟁", "perpisahan": "이별",
+          "perjanjian": "계약", "pertukaran / interaksi": "교류", "peneliti": "연구원", "pewawancara": "면접관",
+          "pembaca": "독자", "responden / orang yang menjawab survei": "응답자",
+          "memberi kesan (mendalam)": "깊은 인상을 남기다", "menantang diri / mencoba hal sulit": "도전하다",
+          "menandatangani / menyepakati (kontrak)": "체결하다", "memperluas / memperbesar": "확대하다",
+          "memperlebar perbedaan": "차이를 넓히다", "memperkecil / menjembatani perbedaan": "차이를 줄이다",
+          "menciptakan perbedaan": "차이를 만들다", "mengabaikan perbedaan": "차이를 무시하다",
+          "memberi pengaruh": "영향을 주다", "menerima pengaruh": "영향을 받다",
+          "menghindari pengaruh": "영향을 피하다", "mengukur pengaruh": "영향을 측정하다",
+          "stasiun": "역", "menolak": "거절하다", "menunda": "미루다", "mengurangi": "줄이다",
+          "membatalkan": "취소하다", "mengabaikan": "무시하다", "menyerah": "포기하다", "menangis": "울다",
+          "memahami / mengidentifikasi dengan tepat": "파악하다", "mencapai target": "달성하다", "mencapai (target)": "달성하다"
+        };
+        Object.keys(EXTRA_KO).forEach(function(k){ var kk = speakNormKey(k); if (kk && !byId[kk]) byId[kk] = EXTRA_KO[k]; });
+      }
+    } catch (e) {}
+    all[mode] = { byId: byId, byTarget: byTarget, idTokens: idTokens };
+  });
+  __speakMaps = all;
+  return __speakMaps[LANGUAGE_CODE] || __speakMaps.en;
+}
+function speakWonToKorean(raw){
+  var m = String(raw || "").trim().match(/^([\d][\d.]*)\s*won$/i);
+  if (!m) return "";
+  var n = parseInt(m[1].replace(/\./g, ""), 10);
+  if (!n) return "";
+  var digits = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+  if (n === 10000) return "만 원";
+  if (n % 10000 === 0 && n / 10000 < 10) return digits[n / 10000] + "만 원";
+  if (n % 1000 === 0 && n / 1000 < 10) return digits[n / 1000] + "천 원";
+  if (n % 100 === 0 && n / 100 < 10) return digits[n / 100] + "백 원";
+  return "";
+}
+function resolveOptionSpeak(rawOpt, questionText){
+  var raw = String(rawOpt == null ? "" : rawOpt).trim();
+  if (!raw) return "";
+  var ko = LANGUAGE_CODE === "ko";
+  var maps = speakMaps();
+  if (ko) { var won = speakWonToKorean(raw); if (won) return won; }
+  var qm = raw.match(/['\u2018]([\uac00-\ud7a3]+)['\u2019]/);
+  if (ko && qm) return qm[1];
+  var pm = raw.match(/\(([^)]*)\)/);
+  if (pm) {
+    if (ko && /[\uac00-\ud7a3]/.test(pm[1])) return pm[1].trim();
+    if (!ko && /[A-Za-z]{2,}/.test(pm[1])) {
+      var head = raw.replace(pm[0], "").trim();
+      if (maps.byId[speakNormKey(cleanIdText(head))]) return pm[1].trim();
+    }
+  }
+  var fullKey = speakNormKey(raw);
+  if (fullKey) {
+    if (maps.byTarget[fullKey]) return maps.byTarget[fullKey];
+    if (maps.byId[fullKey]) return maps.byId[fullKey];
+  }
+  var noParen = raw.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+  var key = speakNormKey(noParen);
+  if (!key) return "";
+  if (maps.byTarget[key]) return maps.byTarget[key];
+  if (maps.byId[key]) return maps.byId[key];
+  var slashParts = noParen.split(/\s*\/\s*/);
+  for (var si = 0; si < slashParts.length; si++) {
+    var sk = speakNormKey(slashParts[si]);
+    if (maps.byTarget[sk]) return maps.byTarget[sk];
+    if (maps.byId[sk]) return maps.byId[sk];
+  }
+  if (ko) {
+    if (/[\uac00-\ud7a3]/.test(noParen)) {
+      var latin = noParen.replace(/[\uac00-\ud7a3]/g, "");
+      if (/[A-Za-z]{3,}/.test(latin)) {
+        var runs = noParen.match(/[\uac00-\ud7a3][\uac00-\ud7a3\s\/]*/g);
+        if (runs) { var joined = runs.map(function(x){ return x.trim(); }).filter(Boolean).join(" ").replace(/\s+/g, " ").trim(); if (joined) return joined; }
+      }
+      return noParen;
+    }
+    return "";
+  }
+  if (/[\uac00-\ud7a3]/.test(noParen)) return "";
+  var toks = key.split(" ").filter(Boolean);
+  if (!toks.length) return "";
+  var unknown = toks.filter(function(t){ return !maps.idTokens[t]; });
+  if (unknown.length && unknown.length * 2 >= toks.length) return noParen;
+  return "";
+}
+function optionSpeakBtn(speakText){
+  var id = ttsRegister({ text: String(speakText == null ? "" : speakText), lang: ttsLangForMode(), optSpeak: true });
+  return '<button type="button" class="option-speak" data-speak-id="' + id + '" aria-label="Dengarkan kata ini dalam Bahasa ' +
+    (LANGUAGE_CODE === "ko" ? "Korea" : "Inggris") + '" title="Dengarkan" onclick="optionSpeakPlay(event,' + id + ')">🔊</button>';
+}
+window.optionSpeakPlay = function(ev, id){
+  if (ev) { try { ev.stopPropagation(); } catch (e) {} try { ev.preventDefault(); } catch (e) {} }
+  var it = __ttsTexts[id];
+  if (!it) return;
+  if (!it.text) { ttsToast("Maaf, suara untuk pilihan ini belum tersedia."); return; }
+  ttsSpeak(it.text, it.lang);
+};
+
 function buildQuestions(lesson){
   const vocab = (typeof curVocab === "function" && curVocab()[lesson.id]) || [];
   const seedBase = lesson.order * 3 + lesson.level.charCodeAt(1);
-  const enAll = vocab.map(v => v[0]), idAll = vocab.map(v => v[1]);
+  // v11: idAll memakai arti Indonesia yang SUDAH dibersihkan dari romanisasi.
+  const enAll = vocab.map(v => v[0]), idAll = vocab.map(v => cleanIdText(v[1]));
   const qs = [];
   if (vocab.length >= 4){
     const V = vocab;
     // v9: nama bahasa target mengikuti mode yang sedang dipilih — JANGAN hardcode "Inggris":
     // di mode Korea semua teks soal harus menyebut "Bahasa Korea", di mode Inggris "Bahasa Inggris".
     const TL = LANGUAGE_CODE === "ko" ? "Korea" : "Inggris";
-    const mkId = (vi, seed) => { const r = rotatedOptions(idAll, V[vi][1], seed);
+    const mkId = (vi, seed) => { const r = rotatedOptions(idAll, idAll[vi], seed);
       return { ctx: "Pilih arti Bahasa Indonesia yang tepat untuk kata yang ditanyakan.",
         q: "Apa arti Bahasa Indonesia dari kata \u201C" + V[vi][0] + "\u201D?",
         translation: "Contoh: " + V[vi][2] + " \u2014 Artinya: " + V[vi][3],
-        opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
+        opts: r.opts.map(o => { const oi = idAll.indexOf(o); return [o, "", oi >= 0 ? V[oi][0] : ""]; }), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     const mkEn = (vi, seed) => { const r = rotatedOptions(enAll, V[vi][0], seed);
       return { ctx: "Pilih kata Bahasa " + TL + " yang tepat untuk arti yang ditanyakan.",
-        q: "Apa Bahasa " + TL + "nya \u201C" + V[vi][1] + "\u201D?",
+        q: "Apa Bahasa " + TL + "nya \u201C" + idAll[vi] + "\u201D?",
         translation: "Contoh: " + V[vi][2] + " \u2014 Artinya: " + V[vi][3],
-        opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
+        opts: r.opts.map(o => [o, "", o]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     const mkBlank = (vi, seed) => { const r = rotatedOptions(enAll, V[vi][0], seed);
-      return { ctx: "Konteks \u2014 baca dulu: " + V[vi][3] + " Kata yang hilang adalah kata yang artinya \u201C" + V[vi][1] + "\u201D.",
+      return { ctx: "Konteks \u2014 baca dulu: " + V[vi][3] + " Kata yang hilang adalah kata yang artinya \u201C" + idAll[vi] + "\u201D.",
         q: "Lengkapi kalimat ini: " + blankOut(V[vi][2], V[vi][0]),
         translation: "Artinya (kalimat lengkap): " + V[vi][3],
-        opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
-    const mkSent = (vi, seed) => { const exIds = vocab.map(v => v[3]); const r = rotatedOptions(exIds, V[vi][3], seed);
+        opts: r.opts.map(o => [o, "", o]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
+    const mkSent = (vi, seed) => { const exIds = vocab.map(v => cleanIdText(v[3])); const r = rotatedOptions(exIds, cleanIdText(V[vi][3]), seed);
       return { ctx: "Pilih terjemahan Bahasa Indonesia yang tepat untuk kalimat Bahasa " + TL + " ini.",
         q: "Apa arti kalimat ini: \u201C" + V[vi][2] + "\u201D",
         translation: "",
-        opts: r.opts.map(o => [o, ""]), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
+        opts: r.opts.map(o => { const oi = exIds.indexOf(o); return [o, "", oi >= 0 ? V[oi][2] : ""]; }), answer: r.answer, full: V[vi][2], full_id: V[vi][3] }; };
     // 10 soal: 4 kata pelajaran dipakai dalam beberapa bentuk soal yang BERBEDA
     // (arti kata, kata dari arti, lengkapi kalimat, arti kalimat) - tidak ada
     // soal yang teksnya sama persis di dalam satu latihan.
@@ -361,7 +566,7 @@ function showQ(){
   $("quiz-feedback").textContent = "";
   $("quiz-next").hidden = true;
   $("quiz-options").innerHTML = item.opts.map((o, i) =>
-    "<button class=\"option\" id=\"opt-" + i + "\" onclick=\"answer(" + i + ")\">" + o[0] + (o[1] ? "<small>Artinya: " + o[1] + "</small>" : "") + "</button>").join("");
+    "<div class=\"option-row\"><button class=\"option\" id=\"opt-" + i + "\" onclick=\"answer(" + i + ")\">" + o[0] + (o[1] ? "<small>Artinya: " + o[1] + "</small>" : "") + "</button>" + optionSpeakBtn(o[2] || resolveOptionSpeak(o[0], item.q)) + "</div>").join("");
 }
 window.answer = function(i){
   const s = quizState;
@@ -756,6 +961,9 @@ var _ks = document.getElementById("kovocab-search"); if (_ks) _ks.addEventListen
 var mockState = null, mockTimer = null;
 function fmtTime(s){ var m=Math.floor(s/60), d=s%60; return (m<10?"0":"")+m+":"+(d<10?"0":"")+d; }
 function startMockSet(title, questions, minutes){
+  // v11: pertanyaan + pilihan jawaban di semua mock/simulasi/bank soal juga
+  // dibersihkan dari romanisasi yang menempel pada arti Bahasa Indonesia.
+  questions = questions.map(function(q){ var co = (q.opts || []).map(cleanIdText); return { q: cleanIdText(q.q), opts: co, ans: q.ans, why: q.why, speak: co.map(function(o){ return resolveOptionSpeak(o, q.q); }) }; });
   mockState = { title:title, qs:questions, idx:0, correct:0, wrong:0, total:questions.length, remain:minutes*60, answers:[] };
   document.getElementById("home-view").hidden = true;
   var lv = document.getElementById("lesson-view"); if (lv) lv.hidden = true;
@@ -781,7 +989,7 @@ function showMockQ(){
   document.getElementById("mock-q").textContent = q.q;
   document.getElementById("mock-feedback").textContent = "";
   document.getElementById("mock-next").hidden = true;
-  document.getElementById("mock-options").innerHTML = q.opts.map(function(o,i){ return '<button class="btn btn-outline" style="display:block;width:100%;margin:6px 0;text-align:left" onclick="answerMock('+i+')">'+esc(o)+'</button>'; }).join("");
+  document.getElementById("mock-options").innerHTML = q.opts.map(function(o,i){ return '<div class="option-row"><button class="btn btn-outline mock-opt" style="display:block;width:100%;margin:6px 0;text-align:left" onclick="answerMock('+i+')">'+esc(o)+'</button>' + optionSpeakBtn((q.speak && q.speak[i]) || resolveOptionSpeak(o, q.q)) + '</div>'; }).join("");
 }
 function answerMock(i){
   var st = mockState, q = st.qs[st.idx], ok = i===q.ans;
@@ -792,7 +1000,7 @@ function answerMock(i){
   document.getElementById("mock-live").textContent = "✅ Benar: " + st.correct + " · ❌ Salah: " + st.wrong;
   document.getElementById("mock-feedback").textContent = ok ? "✅ Benar!" : "❌ Salah. Jawaban benar: " + q.opts[q.ans];
   document.getElementById("mock-feedback").textContent += " — " + q.why;
-  document.querySelectorAll("#mock-options button").forEach(function(b){ b.disabled = true; });
+  document.querySelectorAll("#mock-options .mock-opt").forEach(function(b){ b.disabled = true; }); // v12: tombol 🔊 TIDAK ikut dinonaktifkan — tetap bisa ditekan setelah menjawab
   var nx = document.getElementById("mock-next");
   nx.hidden = false; nx.textContent = st.idx+1>=st.total ? "Lihat Hasil →" : "Lanjut →";
   nx.onclick = function(){ st.idx++; if (st.idx>=st.total) finishMock(false); else showMockQ(); };
