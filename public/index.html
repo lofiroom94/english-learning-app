@@ -4,9 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DidiGo — Belajar Bahasa Asing, selangkah demi selangkah</title>
-<meta name="description" content="DidiGo — Belajar Bahasa Asing, selangkah demi selangkah. Saat ini tersedia Bahasa Inggris & Korea dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, catatan partikel Korea, tombol Dengarkan (TTS gratis), dan kata hari ini. Progres, XP, dan streak tersimpan di akunmu.">
+<meta name="description" content="DidiGo — Belajar Bahasa Asing, selangkah demi selangkah. Saat ini tersedia Bahasa Inggris, Korea & Jepang dari A0 sampai C2, dengan arti Bahasa Indonesia di setiap soal, catatan penting, catatan partikel Korea, halaman Belajar Menulis & Mengucapkan (Hangul, Hiragana & Katakana), tombol Dengarkan (TTS gratis), Sesi Hari Ini 15 menit, Kartu Hafalan SRS, Perpustakaan Bacaan, Pusat Persiapan Ujian (IELTS/TOEFL/TOEIC, TOPIK/EPS-TOPIK, JLPT/JFT-Basic), soal isian ketik + keyboard virtual Hangul/Kana, Grammar Pattern bertahap, 500 Kata Inti, dan kata hari ini. Progres, XP, dan streak tersimpan di akunmu.">
 <meta property="og:title" content="DidiGo">
 <meta property="og:description" content="Belajar Bahasa Asing, selangkah demi selangkah.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8a87c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DidiGo">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -15,13 +23,14 @@
   <div class="topbar-inner">
     <a class="brand" href="#" aria-label="DidiGo — Belajar Bahasa Asing, selangkah demi selangkah">
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 5.5C6.2 4.2 9 4 12 5.2 15 4 17.8 4.2 20 5.5v12c-2.2-1.3-5-1.5-8-.3-3-1.2-5.8-1-8 .3v-12Z" fill="#fff" opacity=".95"/><path d="M12 5.2v12" stroke="#46a302" stroke-width="1.6"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 5.5C6.2 4.2 9 4 12 5.2 15 4 17.8 4.2 20 5.5v12c-2.2-1.3-5-1.5-8-.3-3-1.2-5.8-1-8 .3v-12Z" fill="#fff" opacity=".95"/><path d="M12 5.2v12" stroke="#c96f4a" stroke-width="1.6"/></svg>
       </span>
       <span class="brand-text"><span class="brand-name">DidiGo</span><span class="brand-tagline">Belajar Bahasa Asing, selangkah demi selangkah</span></span>
     </a>
     <div class="lang-switch" role="group" aria-label="Pilih bahasa">
       <button id="lang-btn-en" class="lang-btn is-active" type="button">English</button>
       <button id="lang-btn-ko" class="lang-btn" type="button">한국어 Korea</button>
+      <button id="lang-btn-ja" class="lang-btn" type="button">日本語 Jepang</button>
     </div>
     <div id="auth-bar">
       <span id="user-info">Belum masuk</span>
@@ -367,6 +376,15 @@
     <div id="word-classes" class="word-grid"></div>
   </section>
 
+  <!-- v13: KARTU TOMBOL BELAJAR MENULIS & MENGUCAPKAN (hanya mode Korea/Jepang; isinya halaman terpisah) -->
+  <section id="writing-card-section" class="section-block" hidden>
+    <article class="bank-card writing-card">
+      <h3>✏️ Belajar Menulis &amp; Mengucapkan</h3>
+      <p id="writing-card-label">Huruf dasar bahasa ini — penulisan, cara baca, dan contoh kata per huruf.</p>
+      <button class="btn btn-primary" type="button" onclick="openWritingPage()">Buka Halaman Belajar Menulis →</button>
+    </article>
+  </section>
+
   <!-- 6. JALUR BELAJAR -->
   <section id="jalur-belajar" class="section-block">
     <p class="section-eyebrow">Jalur belajar</p>
@@ -472,7 +490,7 @@
     <p class="section-eyebrow">Latihan</p>
     <h2 id="quiz-title"></h2>
     <p id="lesson-meta" class="lesson-meta"></p>
-    <p class="section-sub">Ketuk ikon 🔊 di samping pilihan jawaban untuk mendengar kata itu dalam bahasa yang sedang dipelajari — menekan ikon hanya memutar suara, tidak memilih jawaban. Kecepatan suara mengikuti bilah 🔊 Lambat/Normal di bawah layar.</p>
+    <p class="section-sub">Ketuk ikon 🔊 di samping pilihan jawaban untuk mendengar kata itu dalam bahasa yang sedang dipelajari — menekan ikon hanya memutar suara, tidak memilih jawaban. Kecepatan suara mengikuti bilah 🔊 Lambat/Normal di bawah layar. Arti Bahasa Indonesia pada baris Contoh disembunyikan dulu — tebak sendiri, lalu ketuk 👁️ Lihat Artinya kalau belum tahu; sesudah menjawab, artinya tampil otomatis.</p>
     <div class="quiz-meta-row">
       <span id="quiz-counter" class="quiz-counter-chip">Soal 1 dari 10</span>
       <span id="quiz-live-score" class="quiz-score-chip">✅ Benar: 0 · ❌ Salah: 0</span>
@@ -498,15 +516,30 @@
     <p class="section-eyebrow">Mock Test</p>
     <h2 id="mock-title"></h2>
     <p id="mock-meta" class="lesson-meta"></p>
-    <p class="section-sub">Ketuk ikon 🔊 di samping pilihan jawaban untuk mendengar kata itu dalam bahasa target — menekan ikon hanya memutar suara, tidak memilih jawaban.</p>
+    <p class="section-sub">Ketuk ikon 🔊 di samping pilihan jawaban untuk mendengar kata itu dalam bahasa target — menekan ikon hanya memutar suara, tidak memilih jawaban. Bila soal punya baris Contoh, artinya disembunyikan dulu — ketuk 👁️ Lihat Artinya untuk melihatnya; sesudah menjawab, artinya tampil otomatis.</p>
     <div class="quiz-meta-row"><span id="mock-counter" class="quiz-counter-chip">Soal 1 dari 10</span><span id="mock-live" class="quiz-score-chip">✅ Benar: 0 · ❌ Salah: 0</span></div>
     <div class="quiz-progress-track"><span id="mock-progress-fill" class="quiz-progress-fill"></span></div>
     <div id="mock-tts"></div>
     <p id="mock-q" class="quiz-q"></p>
+    <p id="mock-example"></p>
     <div id="mock-options"></div>
     <p id="mock-feedback" class="quiz-feedback" role="status"></p>
     <button id="mock-next" class="btn btn-primary btn-lg" hidden>Lanjut →</button>
     <div id="mock-review"></div>
+  </section>
+</main>
+
+<!-- HALAMAN BELAJAR MENULIS & MENGUCAPKAN (v13) — halaman tersendiri, dibuka dari kartu tombol di beranda -->
+<main id="writing-view" class="lesson-view-main" hidden>
+  <div class="lesson-toprow">
+    <button id="btn-writing-back" class="btn btn-ghost" type="button">← Kembali ke Beranda</button>
+    <button id="btn-writing-exit" class="btn btn-ghost" type="button">✕ Tutup</button>
+  </div>
+  <section class="quiz-card">
+    <p class="section-eyebrow">Belajar Menulis &amp; Mengucapkan</p>
+    <h2 id="writing-title">✏️ Belajar Menulis &amp; Mengucapkan</h2>
+    <p class="section-sub">Pelajari setiap huruf satu per satu: bentuk hurufnya, urutan goresan penulisannya, cara bacanya (dengan kata Bahasa Indonesia yang bunyinya mirip), contoh kata asli beserta artinya, dan tombol 🔊 untuk mendengar bunyi huruf dan contoh katanya.</p>
+    <div id="writing-content"></div>
   </section>
 </main>
 
