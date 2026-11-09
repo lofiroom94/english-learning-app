@@ -28,7 +28,7 @@
   <div class="topbar-progress" aria-hidden="true"><span id="top-progress-fill"></span></div>
 </header>
 
-<main>
+<main id="home-view">
   <!-- 1. HERO -->
   <section class="hero">
     <p class="hero-eyebrow">Belajar Bahasa Inggris · A0 sampai C2</p>
@@ -144,22 +144,57 @@
   <section id="jalur-belajar" class="section-block">
     <p class="section-eyebrow">Jalur belajar</p>
     <h2 class="section-title">🗺️ Jalur Belajar — 42 Pelajaran, A0 sampai C2</h2>
-    <p class="section-sub">Ikuti jalurnya dari atas ke bawah. Setiap pelajaran yang selesai memberi XP dan ditandai “Selesai”.</p>
+    <p class="section-sub">Ikuti jalurnya dari atas ke bawah. <b>Setiap pelajaran berisi 10 soal</b> — jumlah soalnya juga tertulis di setiap kartu pelajaran. Klik Mulai dan latihan akan terbuka di <b>halaman latihan tersendiri</b>, bukan di bawah halaman ini. Setiap pelajaran yang selesai memberi XP dan ditandai “Selesai”.</p>
     <div id="lessons"></div>
   </section>
 
-  <!-- 7. KUIS -->
-  <section id="quiz-box" class="quiz-card" hidden>
+
+</main>
+
+<!-- HALAMAN LATIHAN (v4) — terbuka sebagai halaman tersendiri saat Mulai diklik -->
+<main id="lesson-view" class="lesson-view-main" hidden>
+  <div class="lesson-toprow">
+    <button id="btn-back-home" class="btn btn-ghost">← Kembali ke Beranda</button>
+    <button id="btn-exit-lesson" class="btn btn-ghost">✕ Keluar Latihan</button>
+  </div>
+  <section id="quiz-box" class="quiz-card">
     <p class="section-eyebrow">Latihan</p>
     <h2 id="quiz-title"></h2>
+    <p id="lesson-meta" class="lesson-meta"></p>
+    <div class="quiz-meta-row">
+      <span id="quiz-counter" class="quiz-counter-chip">Soal 1 dari 10</span>
+      <span id="quiz-live-score" class="quiz-score-chip">✅ Benar: 0 · ❌ Salah: 0</span>
+    </div>
+    <div class="quiz-progress-track" role="progressbar" aria-label="Kemajuan latihan"><span id="quiz-progress-fill" class="quiz-progress-fill"></span></div>
     <div id="quiz-context"></div>
     <p id="quiz-q" class="quiz-q"></p>
     <p id="quiz-translation"></p>
     <div id="quiz-options"></div>
     <p id="quiz-feedback" class="quiz-feedback" role="status"></p>
-    <button id="quiz-next" class="btn btn-primary btn-lg" hidden>Lanjut</button>
+    <button id="quiz-next" class="btn btn-primary btn-lg" hidden>Lanjut →</button>
   </section>
 </main>
+
+<!-- POP-UP HASIL LATIHAN (v4) -->
+<div id="result-modal" class="result-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="result-title">
+  <div class="result-card">
+    <div id="result-emoji" class="result-emoji" aria-hidden="true">🎉</div>
+    <h2 id="result-title">Latihan Selesai!</h2>
+    <p id="result-lesson" class="result-lesson"></p>
+    <div class="result-stats">
+      <div class="result-stat result-stat-ok"><span id="result-correct">0 benar</span><small>jawaban benar ✅</small></div>
+      <div class="result-stat result-stat-bad"><span id="result-wrong">0 salah</span><small>jawaban salah ❌</small></div>
+    </div>
+    <p id="result-score" class="result-score"></p>
+    <p id="result-xp" class="result-xp"></p>
+    <div class="result-actions">
+      <button id="result-next-lesson" class="btn btn-primary btn-lg" hidden>Pelajaran Berikutnya →</button>
+      <button id="result-retry" class="btn btn-outline btn-lg">🔁 Ulangi Latihan Ini</button>
+      <button id="result-back" class="btn btn-primary btn-lg">Kembali ke Jalur Belajar</button>
+      <button id="result-close" class="btn btn-ghost">Tutup</button>
+    </div>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="footer-inner">

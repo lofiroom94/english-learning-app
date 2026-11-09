@@ -242,3 +242,43 @@ td,th{border:1px solid var(--border);padding:6px 10px;text-align:left}
   .quiz-card{padding:20px 16px}
   .path::before{left:26px}
 }
+
+/* ---------- v3: halaman latihan sendiri + info jumlah soal + pop-up hasil ---------- */
+.meta-chip{display:inline-flex;align-items:center;min-height:32px;padding:4px 10px;
+  border-radius:999px;background:var(--blue-soft);border:1px solid #bde6fd;
+  color:#0369a1;font-weight:800;font-size:.84rem}
+.lesson-view-main{max-width:760px}
+.lesson-toprow{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px}
+.lesson-meta{color:var(--text-soft);font-weight:600;font-size:.92rem;margin-bottom:12px}
+.quiz-meta-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.quiz-counter-chip{display:inline-flex;align-items:center;min-height:34px;padding:5px 12px;border-radius:999px;
+  background:var(--green-soft);border:1px solid #cdeeb2;color:var(--green-dark);font-weight:800;font-size:.9rem}
+.quiz-score-chip{display:inline-flex;align-items:center;min-height:34px;padding:5px 12px;border-radius:999px;
+  background:var(--surface-alt);border:1px solid var(--border);font-weight:700;font-size:.9rem}
+.quiz-progress-track{height:12px;background:var(--surface-alt);border-radius:999px;overflow:hidden;margin-bottom:16px}
+.quiz-progress-fill{display:block;height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--green),#7ed321);transition:width .4s ease}
+.option:disabled{cursor:default;opacity:.92}
+.option.is-correct{border-color:var(--green);background:var(--green-soft)}
+.option.is-wrong{border-color:var(--red);background:#ffecec}
+.result-overlay{position:fixed;inset:0;z-index:100;background:rgba(20,30,20,.55);
+  display:flex;align-items:center;justify-content:center;padding:18px}
+.result-overlay[hidden]{display:none}
+.result-card{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lift);
+  max-width:440px;width:100%;padding:28px 24px;text-align:center;max-height:92vh;overflow:auto}
+.result-emoji{font-size:3rem;line-height:1;margin-bottom:8px}
+.result-card h2{font-size:1.5rem;margin-bottom:4px}
+.result-lesson{color:var(--text-soft);font-weight:600;margin-bottom:16px}
+.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.result-stat{border-radius:14px;padding:14px 10px;font-weight:800;font-size:1.05rem;border:1px solid var(--border)}
+.result-stat small{display:block;font-weight:600;color:var(--text-soft);font-size:.82rem;margin-top:2px}
+.result-stat-ok{background:var(--green-soft);border-color:#cdeeb2;color:var(--green-dark)}
+.result-stat-bad{background:#ffecec;border-color:#f6caca;color:#9c2222}
+.result-score{font-weight:800;font-size:1.05rem;margin-bottom:6px}
+.result-xp{color:#8a5200;background:var(--amber-soft);border:1px solid #f5d9ae;
+  border-radius:12px;padding:10px 12px;font-weight:700;margin-bottom:18px}
+.result-actions{display:grid;gap:10px}
+.result-actions .btn{width:100%}
+
+/* v4: tombol Masuk/Daftar yang sudah berubah menjadi nama akun */
+.btn.is-account{ background:#e8f9d9; color:#2f6b12; border:2px solid #b7e48b; cursor:default; opacity:1; }
