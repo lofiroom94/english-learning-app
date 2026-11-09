@@ -2229,7 +2229,7 @@ function pageTutor(c) {
     S.tutorUsage.count++; save();
     hist().push({ r: 'a', t: 'Tutor sedang mengetik…' }); draw();
     try {
-      const res = await fetch(TUTOR_AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: q, lang: S.lang, level: tutorLevel(), history: hist().slice(-9, -1).map(m => ({ role: m.r === 'u' ? 'user' : 'model', text: m.t })) }) });
+      const res = await fetch(TUTOR_AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY }, body: JSON.stringify({ message: q, lang: S.lang, level: tutorLevel(), history: hist().slice(-9, -1).map(m => ({ role: m.r === 'u' ? 'user' : 'model', text: m.t })) }) });
       const data = await res.json().catch(() => ({}));
       hist()[hist().length - 1].t = data.reply || data.text || 'Maaf, Tutor AI tidak menjawab. Coba lagi sebentar lagi.';
     } catch (e) { hist()[hist().length - 1].t = 'Koneksi ke Tutor AI gagal. Periksa lagi nanti — atau nyalakan Mode Privat untuk bantuan dari materi.'; }
