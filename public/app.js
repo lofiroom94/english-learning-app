@@ -2,8 +2,8 @@
    Cangkang diam: sidebar + bar atas dirender SEKALI; hanya #content berganti. */
 'use strict';
 /* ===== Konfigurasi Supabase — ISI sebelum deploy (lihat CARA-UPDATE-KE-V21.md) ===== */
-const SUPABASE_URL = 'GANTI_DENGAN_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'GANTI_DENGAN_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://tdwkghphdppwvznxcggz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_HB_emJDuMKe3GflAeLqPrA_JAmYLLz8';
 
 const DG = window.DG_DATA;
 const $ = (s, r) => (r || document).querySelector(s);
