@@ -2164,7 +2164,7 @@ function dashboardHTML() {
 /* ===== TUTOR AI (Gemini via Supabase Edge Function — key TIDAK PERNAH di frontend) ===== */
 // Isi URL Edge Function "tutor-ai" setelah deploy (lihat CARA-DEPLOY-TUTOR-AI.md).
 // Kosong = Tutor AI belum aktif: chat tetap jalan dengan bantuan berbasis aturan dari materi.
-const TUTOR_AI_URL = 'https://tdwkghphdppwvznxcgz.supabase.co/functions/v1/tutor-ai';
+const TUTOR_AI_URL = 'https://tdwkghphdppwvznxcggz.supabase.co/functions/v1/tutor-ai';
 function tutorLevel() { return LS().placement || 'A0'; }
 function tutorLocalHelp(q) {
   const t = ' ' + String(q || '').toLowerCase() + ' ';
