@@ -316,6 +316,19 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-speak]');
   if (b) { speak(b.getAttribute('data-speak'), b, b.dataset && b.dataset.gender ? { gender: b.dataset.gender } : undefined); }
 });
+/* Pop-up kecepatan suara (#tts-pop) langsung hilang bila pengguna menekan di luar
+   pop-up atau meng-scroll halaman — sebelumnya hanya hilang lewat timer 6 detik /
+   saat audio selesai, sehingga terasa "nyangkut" dan mengikuti layar saat di-scroll. */
+document.addEventListener('pointerdown', e => {
+  const pop = $('#tts-pop');
+  if (!pop || pop.hidden) return;
+  if (e.target && e.target.closest && e.target.closest('#tts-pop')) return;
+  clearTimeout(pop._h); pop.hidden = true;
+});
+window.addEventListener('scroll', () => {
+  const pop = $('#tts-pop');
+  if (pop && !pop.hidden) { clearTimeout(pop._h); pop.hidden = true; }
+}, { passive: true });
 /* Gender pembicara dialog: nama yang dikenal didahulukan; sisanya bergantian
    mengikuti urutan bicara (pembicara pertama mengikuti konvensi A). */
 const FEMALE_SPEAKERS = ['ani', 'rina', 'sari', 'nina', 'maya', 'lala', 'fani', 'eka', 'mom', '엄마', '민아', '리나', '사라', '니나', '수아', '라라', '파니', '에카', 'アニ', 'リナ', 'サリ', 'ニナ', 'マヤ', 'ララ', 'ファニ', 'エカ', '母'];
@@ -1199,7 +1212,7 @@ function drawKeyboard(mount, input) {
         '<div class="kbd-row kbd-cjrow">' + cjBtn(3) + cjBtn(4) + cjBtn(5) + '</div>' +
         '<div class="kbd-row kbd-cjrow">' + cjBtn(6) + '<span class="kbd-cj-note">Ketuk tombol konsonan berulang untuk mengganti hurufnya (ㄱ→ㅋ→ㄲ). Vokal dibentuk dari ㅣ + · + ㅡ: ㅣ+·=ㅏ, ·+ㅣ=ㅓ, ·+ㅡ=ㅗ, ㅡ+·=ㅜ.</span></div>' + util;
     }
-  } else {
+  } else if (S.lang === 'ja') {
     const H = ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','せ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ','を','ん'];
     const K = ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ','サ','シ','ス','セ','ソ','タ','チ','ツ','テ','ト','ナ','ニ','ヌ','ネ','ノ','ハ','ヒ','フ','ヘ','ホ','マ','ミ','ム','メ','モ','ヤ','ユ','ヨ','ラ','リ','ル','レ','ロ','ワ','ヲ','ン'];
     const DH = ['が','ぎ','ぐ','げ','ご','ざ','じ','ず','ぜ','ぞ','だ','ぢ','づ','で','ど','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ'];
@@ -1214,7 +1227,10 @@ function drawKeyboard(mount, input) {
         '<div class="kbd-row">' + daku.map(key).join('') + '</div>' +
         '<div class="kbd-row">' + small.map(key).join('') + '<button type="button" class="kbd-key" data-kbd-key="dakuten">゛</button><button type="button" class="kbd-key" data-kbd-key="handakuten">゜</button></div>' + util;
     }
-    headLabel = 'Keyboard ' + LANGMETA[S.lang].name + ' lengkap — suku kata/kana tersusun otomatis';
+    headLabel = 'Keyboard Jepang lengkap — suku kata/kana tersusun otomatis';
+  } else {
+    body = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map(r => '<div class="kbd-row">' + r.split('').map(key).join('') + '</div>').join('') + util;
+    headLabel = 'Keyboard Inggris (QWERTY)';
   }
   mount.innerHTML = '<div class="kbd-wrap"><div class="kbd-head"><span>⌨️ ' + headLabel + '</span><button type="button" class="btn white small" data-kbd-key="toggle">Sembunyikan</button></div><div class="kbd-body">' + body + '</div></div>';
   $$('[data-ch]', mount).forEach(b => b.onmousedown = e => e.preventDefault());
