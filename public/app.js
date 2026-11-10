@@ -128,7 +128,7 @@ function makeMCQuestion(w, pool, seed, topicTitle, promptStyle) {
   const opts = shuffle([w[0]].concat(distract), seed + 7);
   const prompt = promptStyle === 'arti'
     ? 'Kata Bahasa ' + LANGMETA[S.lang].name + ' untuk "' + w[1] + '" adalah…'
-    : 'Kamu mau bilang "' + w[1] + '" dalam Bahasa ' + LANGMETA[S.lang].name + ' saat topik "' + (topicTitle || '') + '". Kata apa yang tepat?';
+    : 'Apa Bahasa ' + LANGMETA[S.lang].name + ' dari "' + w[1] + '"?';
   return { type: 'mc', prompt, options: opts, answer: opts.indexOf(w[0]), tag: topicTitle, context: wordContext(w, 'word', topicTitle), explain: 'Contoh: ' + w[2] + ' — ' + w[3] };
 }
 
@@ -351,6 +351,14 @@ const DRAWER_GROUPS = [
   ['PROGRES', [['progress', 'Dashboard Kemahiran'], ['journal', 'Jurnal'], ['settings', 'Pengaturan']]]
 ];
 const ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+/* Ikon navigasi bawah — pilihan C (Garis Tebal): tiap tombol punya ikon sendiri. */
+const BN_ICONS = {
+  home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/><path d="M9.5 21v-6h5v6"/></svg>',
+  modules: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  flashcards: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+  practice: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  settings: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+};
 let route = { name: 'home', params: {} };
 function displayName() { return S.name || (S.user ? S.user.name : '') || 'Pelajar'; }
 /* ===== Mode gelap/terang (tersimpan; default Terang) ===== */
@@ -491,18 +499,53 @@ function setLang(L) {
   else if (route.name === 'eps' && L !== 'ko') go('exams');
   else go(route.name, route.params);
 }
-function go(name, params) {
+function go(name, params, opts) {
   route = { name, params: params || {} };
   renderSidebar(); renderBottomNav();
   const c = $('#content');
   PAGES[name] ? PAGES[name](c, route.params) : PAGES.home(c);
   c.scrollTop = 0; c.focus({ preventScroll: true });
+  if (!opts || !opts.noPush) { try { history.pushState({ name, params: route.params }, ''); } catch (e) {} }
 }
+/* Tombol back browser / gesture swipe (iPhone): kembali ke halaman sebelumnya di dalam web. */
+window.addEventListener('popstate', e => {
+  const st = e.state;
+  if (st && st.name && PAGES[st.name]) go(st.name, st.params || {}, { noPush: true });
+});
+/* Tombol "← Kembali" di dalam web: pakai riwayat browser (bukan lompat ke halaman induk). */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-back]');
+  if (b) { e.preventDefault(); history.back(); }
+});
+/* Gesture swipe dari tepi kiri — untuk iPhone/iPad terpasang (mode standalone) DAN semua Android.
+   Di iPhone terpasang, gesture back bawaan browser tidak ada (aplikasi jalan tanpa chrome browser).
+   Di Android, gesture back sistem ternyata tidak selalu jalan di dalam web, jadi web mendeteksi
+   sendiri geserannya. Bila sistem juga mengenali geseran itu sebagai back, sentuhannya dibatalkan
+   (touchcancel) sehingga handler ini tidak ikut menembak — tidak kembali dua halaman sekaligus.
+   Tidak memblokir scroll/seleksi. */
+(function () {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isStandalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  if (!((isIOS && isStandalone) || isAndroid)) return;
+  let swX = null, swY = null;
+  document.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    if (t && t.clientX < 30) { swX = t.clientX; swY = t.clientY; } else { swX = null; swY = null; }
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (swX === null) return;
+    const t = e.changedTouches[0];
+    const sb = document.getElementById('sidebar');
+    if (t && (t.clientX - swX) > 60 && Math.abs(t.clientY - swY) < 40 && !(sb && sb.classList.contains('open'))) history.back();
+    swX = null; swY = null;
+  }, { passive: true });
+})();
 /* Bottom-nav ponsel: 5 tombol utama; menu lengkap tetap di laci sidebar. */
 function renderBottomNav() {
   const bn = $('#bottomnav'); if (!bn) return;
-  const items = [['home', 'Beranda'], ['modules', 'Modul'], ['flashcards', 'Kartu Hafalan'], ['practice', 'Kuis'], ['settings', 'Profil']];
-  bn.innerHTML = items.map(([r, label]) => '<button type="button" class="bn-item' + (route.name === r ? ' active' : '') + '" data-bn="' + r + '">' + ICON + '<span>' + label + '</span></button>').join('');
+  const items = [['home', 'Beranda'], ['modules', 'Modul'], ['flashcards', 'Hafalan'], ['practice', 'Kuis'], ['settings', 'Profil']];
+  bn.innerHTML = items.map(([r, label]) => '<button type="button" class="bn-item' + (route.name === r ? ' active' : '') + '" data-bn="' + r + '">' + BN_ICONS[r] + '<span>' + label + '</span></button>').join('');
   $$('#bottomnav [data-bn]').forEach(b => b.onclick = () => go(b.dataset.bn));
 }
 
@@ -520,7 +563,7 @@ function dueCards() {
 }
 function newCards() { const srs = LS().srs; const out = []; DG.core[S.lang].forEach((w, i) => { if (!srs[i]) out.push(i); }); return out; }
 function greet() { const h = new Date().getHours(); return h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 19 ? 'Selamat sore' : 'Selamat malam'; }
-function crumb(parts) { return '<nav class="crumb">' + parts.map((p, i) => i === parts.length - 1 ? '<b>' + esc(p[0]) + '</b>' : '<a href="#" data-crumb="' + p[1] + '">' + esc(p[0]) + '</a>').join(' › ') + '</nav>'; }
+function crumb(parts) { const parent = parts.length > 1 ? parts[parts.length - 2] : null; const back = parts.length > 1 ? '<div style="margin:2px 0 8px"><button type="button" class="btn white small" data-back="1">← Kembali</button></div>' : ''; return back + '<nav class="crumb">' + parts.map((p, i) => i === parts.length - 1 ? '<b>' + esc(p[0]) + '</b>' : '<a href="#" data-crumb="' + p[1] + '">' + esc(p[0]) + '</a>').join(' › ') + '</nav>'; }
 function bindCrumb(root) { $$('[data-crumb]', root).forEach(a => a.onclick = e => { e.preventDefault(); go(a.dataset.crumb); }); }
 
 /* ===== BERANDA ===== */
@@ -634,8 +677,141 @@ function pageModules(c) {
   draw();
 }
 
-/* ===== PELAJARAN — 7 bagian ===== */
-function partTitles(les, v) {
+/* ===== PELAJARAN — 7 bagian MODEL BAB BUKU =====
+   Tiap pelajaran mengikuti struktur bab buku (Sejong / Marugoto / English
+   File): Tujuan & Dialog, Kosakata, Tata Bahasa 1, Tata Bahasa 2, Bacaan,
+   Latihan Bab, Cek Mandiri. Isi bab ada di DG.chapters (42 bab/bahasa). */
+const CHAPTER_TITLES = ['Tujuan & Dialog', 'Kosakata', 'Tata Bahasa 1', 'Tata Bahasa 2', 'Bacaan', 'Latihan Bab', 'Cek Mandiri'];
+function chapterForLesson(les) {
+  const all = (DG.chapters && DG.chapters[S.lang]) || [];
+  if (!all.length) return null;
+  return all.find(b => b.id === les.id || b.id === S.lang + '-' + les.id) || all[lessons().indexOf(les)] || null;
+}
+/* State lokal halaman bab: jawaban kuis mini bacaan + centang cek mandiri
+   (hanya di memori selama aplikasi terbuka, tidak disimpan ke server). */
+const babState = {};
+function babGet(les) {
+  const k = S.lang + ':' + les.id;
+  return babState[k] || (babState[k] = { reading: {}, self: [false, false, false] });
+}
+function partTitles(les, v) { return CHAPTER_TITLES; }
+/* Dialog bab: tampil seperti dialogLinesHTML (pembicara + gender + tombol
+   suara per baris) — tapi tombol "Putar dialog" diikat langsung ke dialog
+   bab, karena handler global [data-play-dialog] hanya mencari di DG.dialogs. */
+function chapterDialogHTML(d) {
+  const genders = dialogGenders(d);
+  return d.lines.map(l => {
+    const g = genders[l[0]];
+    return '<div class="dialog-line"><span class="who">' + esc(l[0]) + ' (' + genderLabel(g) + ')</span><div class="txt"><b>' + esc(l[1]) + '</b> ' + dialogTtsBtn(l[1], g) + '<small>' + esc(l[2]) + '</small></div></div>';
+  }).join('') +
+  '<div style="margin-top:10px"><button type="button" class="btn white small" data-play-chapter-dialog="1">▶ Putar dialog (suara laki-laki & perempuan bergantian)</button></div>';
+}
+/* Kuis mini bacaan: klik jawaban -> langsung benar/salah + pembahasan. */
+function readingQuizHTML(bab, les) {
+  const st = babGet(les);
+  return bab.reading.questions.map((q, qi) => {
+    const sel = st.reading[qi];
+    const opts = q.options.map((o, i) => {
+      let cls = 'opt';
+      if (sel != null) {
+        if (i === q.answer) cls += ' correct';
+        else if (i === sel) cls += ' wrong';
+      }
+      return '<button type="button" class="' + cls + '" data-rq="' + qi + '" data-opt="' + i + '"' + (sel != null ? ' disabled' : '') + '><span class="num">' + (i + 1) + '</span><span>' + esc(o) + '</span></button>';
+    }).join('');
+    const fb = sel == null ? '' : (sel === q.answer
+      ? '<div class="good" style="margin-top:10px"><b>Benar!</b> ' + esc(q.explain) + '</div>'
+      : '<div class="warn" style="margin-top:10px"><b>Belum tepat.</b> Jawaban yang benar: <b>' + esc(q.options[q.answer]) + '</b>. ' + esc(q.explain) + '</div>');
+    return '<div class="card" style="margin-top:14px"><div class="qtype">Pertanyaan ' + (qi + 1) + '</div><div class="qtext">' + esc(q.q) + '</div><div class="opt-grid">' + opts + '</div>' + fb + '</div>';
+  }).join('');
+}
+function grammarPartHTML(g) {
+  return '<p>' + esc(g.explain) + '</p>' +
+    g.examples.map(ex => '<div class="sent-line"><b>' + esc(ex[0]) + '</b> ' + ttsBtn(ex[0]) + '<small>' + esc(ex[1]) + '</small></div>').join('');
+}
+function pageLesson(c, p) {
+  const les = lessonById(p.id) || lessons()[0];
+  const part = Math.min(6, Math.max(0, p.part || 0));
+  const bab = chapterForLesson(les);
+  if (!bab) { pageLessonLegacy(c, p, les, part); return; }
+  if (part === 5) { pageLessonExercise(c, les, bab); return; }
+  const titles = CHAPTER_TITLES;
+  let body = '';
+  if (part === 0) {
+    body = '<div class="good"><b>Tujuan bab ini.</b><br>' + esc(bab.cando) + '</div>' +
+      '<h3 style="margin-top:16px">Dialog — ' + esc(bab.dialog.title) + '</h3>' +
+      '<p class="muted small">Dengarkan tiap baris, lalu baca bergantian. Suara tiap pembicara berbeda: laki-laki dan perempuan memakai suara masing-masing.</p>' +
+      chapterDialogHTML(bab.dialog);
+  } else if (part === 1) {
+    body = '<p>Ini semua kosakata bab ini — ' + bab.vocab.length + ' kata. Klik 🔊 untuk mendengar cara bacanya, lalu ulangi dengan suara pelan.</p>' +
+      '<table class="tbl" style="margin-top:12px"><tr><th>Kata</th><th>Arti</th><th>Contoh</th></tr>' +
+      bab.vocab.map(w => '<tr><td><b>' + esc(w[0]) + '</b> ' + ttsBtn(w[0]) + '</td><td>' + esc(w[1]) + '</td><td>' + esc(w[2]) + ' ' + ttsBtn(w[2]) + '<br><span class="muted small">' + esc(w[3]) + '</span></td></tr>').join('') + '</table>';
+  } else if (part === 2) {
+    body = '<h3 style="margin-bottom:8px">' + esc(bab.grammar[0].name) + '</h3>' + grammarPartHTML(bab.grammar[0]);
+  } else if (part === 3) {
+    body = '<h3 style="margin-bottom:8px">' + esc(bab.grammar[1].name) + '</h3>' + grammarPartHTML(bab.grammar[1]);
+  } else if (part === 4) {
+    const split = bab.reading.text.split('\n\nArtinya:');
+    const trans = split.length > 1 ? split[1].trim() : '';
+    body = '<p>Bacaan pendek — <b>' + esc(bab.reading.title) + '</b>. Baca keras-keras, satu kalimat sekali jalan.</p>' +
+      split[0].trim().split(/\n+/).map(pa => '<p style="margin-top:10px">' + esc(pa.trim()) + '</p>').join('') +
+      (trans ? '<div class="contoh-box" style="margin-top:12px"><span class="qtype">Artinya</span><p style="margin-top:6px">' + esc(trans) + '</p></div>' : '') +
+      '<h3 style="margin-top:18px">Pertanyaan pemahaman</h3><p class="muted small">Klik jawabanmu — langsung terlihat benar atau belum, beserta pembahasannya.</p>' +
+      readingQuizHTML(bab, les);
+  } else {
+    const st = babGet(les);
+    body = '<p>Kerjakan kuis modulnya buat menandai bab ini selesai — minimal 70% benar. Sebelum itu, cek dulu apa yang sudah kamu kuasai:</p>' +
+      '<div style="margin-top:12px">' + bab.selfcheck.map((s, i) => '<label style="display:flex;gap:10px;align-items:flex-start;margin:10px 0;cursor:pointer"><input type="checkbox" data-self="' + i + '" style="width:20px;height:20px;margin-top:2px"' + (st.self[i] ? ' checked' : '') + '><span>' + esc(s) + '</span></label>').join('') + '</div>' +
+      '<div class="good" style="margin-top:12px"><b>Ringkasan bab:</b> ' + bab.vocab.length + ' kosakata · 2 pola tata bahasa (' + esc(bab.grammar[0].name) + ' & ' + esc(bab.grammar[1].name) + ') · 1 dialog (' + esc(bab.dialog.title) + ') · 1 bacaan (' + esc(bab.reading.title) + ') · 6 soal latihan bab.</div>';
+  }
+  c.innerHTML = '<div class="wrap">' + crumb([['Beranda', 'home'], ['Modul', 'modules'], [LANGMETA[S.lang].name, 'modules'], [les.title + ' (' + les.level + ')']]) +
+    '<h1 class="page">' + esc(les.title) + ' (' + les.level + ')</h1>' +
+    '<div class="chiprow" style="margin-top:10px"><span class="chip">' + LANGMETA[S.lang].name + '</span><span class="chip">Berbicara</span><span class="chip">Level ' + les.level + '</span><span class="chip">' + LANGMETA[S.lang].cur + '</span><span class="chip">7 bagian · dialog · 2 pola grammar · latihan bab</span></div>' +
+    '<div style="display:flex;align-items:center;gap:12px;margin-top:12px"><span class="small muted">Bagian ' + (part + 1) + '/7</span><div class="pbar" style="flex:1"><i style="width:' + Math.round((part + 1) / 7 * 100) + '%"></i></div></div>' +
+    '<div class="lesson-layout"><div class="card"><h2 style="font-size:21px;margin-bottom:10px">' + esc(titles[part]) + '</h2>' + body +
+    '<div class="part-nav">' + (part > 0 ? '<button type="button" class="btn white" id="prev-part">← Bagian sebelumnya</button>' : '<span></span>') +
+    (part < 6 ? '<button type="button" class="btn" id="next-part">Lanjut ke ' + esc(titles[part + 1]) + ' →</button>' : '<button type="button" class="btn red" id="start-quiz">Mulai Kuis Modul →</button>') + '</div></div>' +
+    '<div class="card"><div class="sect-label" style="margin-top:0">Bagian dalam modul</div>' +
+    titles.map((t, i) => '<button type="button" class="rail-item' + (i === part ? ' active' : '') + (i < part ? ' done' : '') + '" data-part="' + i + '"><span class="n">' + (i < part ? '✓' : i + 1) + '</span>' + esc(t) + '</button>').join('') +
+    '<button type="button" class="btn white small" id="save-mod" style="margin-top:14px">Simpan</button>' +
+    '<div class="sect-label">Lanjut</div><p class="small"><a href="#" data-lanjut="vocab">Semua kosakata ' + LANGMETA[S.lang].name + '</a><br><a href="#" data-lanjut="flashcards">Kumpulkan kalimat baru</a></p></div></div></div>';
+  bindCrumb(c);
+  $$('[data-part]', c).forEach(b => b.onclick = () => go('lesson', { id: les.id, part: +b.dataset.part }));
+  const pv = $('#prev-part', c); if (pv) pv.onclick = () => go('lesson', { id: les.id, part: part - 1 });
+  const nx2 = $('#next-part', c); if (nx2) nx2.onclick = () => { touchActivity(2); go('lesson', { id: les.id, part: part + 1 }); };
+  const sq = $('#start-quiz', c); if (sq) sq.onclick = () => go('quiz', { id: les.id });
+  $('#save-mod', c).onclick = () => { if (!S.bookmarks.includes(S.lang + ':' + les.id)) { S.bookmarks.push(S.lang + ':' + les.id); save(); } toast('Modul tersimpan di Jurnal & Penanda.'); };
+  $$('[data-lanjut]', c).forEach(a => a.onclick = e => { e.preventDefault(); go(a.dataset.lanjut); });
+  const pd = $('[data-play-chapter-dialog]', c); if (pd) pd.onclick = () => playDialog(bab.dialog, pd);
+  $$('[data-rq]', c).forEach(b => b.onclick = () => { babGet(les).reading[+b.dataset.rq] = +b.dataset.opt; pageLesson(c, { id: les.id, part: 4 }); });
+  $$('[data-self]', c).forEach(b => b.onchange = () => { babGet(les).self[+b.dataset.self] = b.checked; });
+}
+/* Latihan Bab (bagian 6 dari 7): 6 soal bab via mesin kuis yang sama. */
+function pageLessonExercise(c, les, bab) {
+  const questions = bab.quiz.map(q => q.type === 'fill'
+    ? { type: 'fill', prompt: q.q, answer: q.answer, explain: q.explain }
+    : { type: 'mc', prompt: q.q, options: q.options, answer: q.answer, explain: q.explain });
+  runQuiz(c, {
+    routeName: 'lesson',
+    crumbHTML: crumb([['Beranda', 'home'], ['Modul', 'modules'], [les.title, 'modules'], ['Latihan Bab']]),
+    title: 'LATIHAN — ' + bab.title + ' (' + les.level + ')',
+    sub: 'Enam soal dari bab ini: pilihan ganda dan isian. Raih minimal 70%, lalu lanjut ke Cek Mandiri.',
+    questions,
+    finish(cc, pct, ok, total) {
+      const passed = pct >= 70;
+      cc.innerHTML = '<div class="wrap"><div class="card" style="max-width:640px;margin:30px auto;text-align:center">' +
+        '<div class="sect-label">Hasil latihan bab</div><h1 class="page">' + pct + '%</h1>' +
+        '<p class="muted" style="margin:8px 0 4px">' + ok + ' dari ' + total + ' soal benar.</p>' +
+        (passed ? '<div class="good" style="text-align:left;margin-top:12px"><b>Bagus!</b> Kamu sudah menguasai bab "' + esc(bab.title) + '". Lanjut ke Cek Mandiri.</div>'
+          : '<div class="warn" style="text-align:left;margin-top:12px"><b>Belum 70%.</b> Nggak apa-apa — baca lagi bagian kosakata dan tata bahasanya, lalu coba lagi.</div>') +
+        '<div class="quiz-actions" style="justify-content:center"><button type="button" class="btn white" id="again-ex">Ulangi latihan</button><button type="button" class="btn" id="to-check">Lanjut ke Cek Mandiri →</button></div></div></div>';
+      $('#again-ex', cc).onclick = () => go('lesson', { id: les.id, part: 5 });
+      $('#to-check', cc).onclick = () => go('lesson', { id: les.id, part: 6 });
+    }
+  });
+}
+/* ===== HALAMAN PELAJARAN LAMA (fallback bila DG.chapters tidak ada) ===== */
+function legacyPartTitles(les, v) {
   const w = v[0] ? v[0][0] : '', t = les.title;
   const special = {
     'a0-1': ['Nyapa itu nggak cuma "halo"', 'Nanya kabar dengan sopan', 'Ngenalin diri tanpa kaku', 'Kata sapaan yang paling sering dipakai', 'Awas jebakan sapaan', 'Ngobrol pertama kali', 'Siap kuis sapaan']
@@ -651,10 +827,9 @@ function partTitles(les, v) {
     'Ringkasan & siap kuis'
   ];
 }
-function pageLesson(c, p) {
-  const les = lessonById(p.id) || lessons()[0];
-  const v = vocabOf(les.id), part = Math.min(6, Math.max(0, p.part || 0));
-  const titles = partTitles(les, v);
+function pageLessonLegacy(c, p, les, part) {
+  const v = vocabOf(les.id);
+  const titles = legacyPartTitles(les, v);
   let body = '';
   if (part === 0) {
     body = '<p>Di bagian ini kita mulai topik <b>' + esc(les.title) + '</b> dari yang paling sering dipakai sehari-hari. Pelan saja — semua kata ada artinya, dan contohnya pendek supaya gampang ditiru.</p>' +
@@ -705,11 +880,28 @@ function pageLesson(c, p) {
 }
 
 /* ===== MESIN KUIS (dipakai kuis modul, latihan, penempatan, simulasi ujian) ===== */
+let activeTimerId = null;
 function runQuiz(c, cfg) {
   const salt = Math.floor(Math.random() * 1e9);
   const qs = cfg.questions.map(q => ({ ...q, sealed: seal(q.type === 'mc' ? 'mc:' + q.answer : 'fill:' + normalizeFill(q.answer), salt) }));
   const st = qs.map(() => ({ sel: null, text: '', submitted: false, correct: false }));
   let cur = 0;
+  /* Timer simulasi (opsional — bila cfg.minutes diisi): hitung mundur, habis -> selesai otomatis. */
+  let remain = cfg.minutes ? cfg.minutes * 60 : 0;
+  let timerId = null;
+  if (activeTimerId) { clearInterval(activeTimerId); activeTimerId = null; }
+  const fmtTime = sec => { const m = Math.floor(sec / 60), ss = sec % 60; return String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); };
+  function startTimer() {
+    if (!remain || timerId) return;
+    timerId = setInterval(() => {
+      const el = document.getElementById('sim-timer');
+      if (!el) { clearInterval(timerId); timerId = null; if (activeTimerId === timerId) activeTimerId = null; return; }
+      remain--;
+      el.textContent = '⏱ ' + fmtTime(Math.max(0, remain));
+      if (remain <= 0) { clearInterval(timerId); timerId = null; activeTimerId = null; finish(); }
+    }, 1000);
+    activeTimerId = timerId;
+  }
   const correctCount = () => st.filter(x => x.submitted && x.correct).length;
   const wrongCount = () => st.filter(x => x.submitted && !x.correct).length;
   function check(i) {
@@ -745,7 +937,7 @@ function runQuiz(c, cfg) {
     const isLast = cur === total - 1;
     c.innerHTML = '<div class="wrap">' + (cfg.crumbHTML || '') +
       '<div class="quiz-head"><div><h1 class="page" style="font-size:22px">' + esc(cfg.title) + '</h1><p class="sub small">' + esc(cfg.sub) + '</p></div>' +
-      '<div class="quiz-meta"><span class="cnt">' + (cur + 1) + '/' + total + '</span><div class="pbar" style="width:130px;margin:6px 0"><i style="width:' + Math.round((cur + 1) / total * 100) + '%"></i></div><span class="cnt">✓ ' + correctCount() + ' ✗ ' + wrongCount() + '</span></div></div>' +
+      '<div class="quiz-meta"><span class="cnt">' + (cur + 1) + '/' + total + '</span><div class="pbar" style="width:130px;margin:6px 0"><i style="width:' + Math.round((cur + 1) / total * 100) + '%"></i></div><span class="cnt">✓ ' + correctCount() + ' ✗ ' + wrongCount() + '</span>' + (cfg.minutes ? '<span class="cnt" id="sim-timer" style="color:var(--red)">⏱ ' + fmtTime(remain) + '</span>' : '') + '</div></div>' +
       '<div class="card quiz-card"><div style="display:flex;justify-content:space-between;align-items:center"><span class="qtype">' + (q.type === 'mc' ? 'Pilihan ganda' : 'Isi bagian kosong') + '</span><button type="button" class="btn white small" id="q-reset">Reset</button></div>' +
       '<div class="q-context"><span class="q-context-label">Konteks</span> ' + esc(contextForQuestion(q)) + '</div>' +
       (q.type === 'mc' ? '<div class="qtext">' + esc(q.prompt) + '</div>' : '') + inner + feedback +
@@ -781,9 +973,11 @@ function runQuiz(c, cfg) {
     draw();
   }
   function finish() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    if (activeTimerId) { clearInterval(activeTimerId); activeTimerId = null; }
     const total = qs.length, ok = correctCount(), pct = Math.round(ok / total * 100);
     document.removeEventListener('keydown', keyH);
-    cfg.finish(c, pct, ok, total);
+    cfg.finish(c, pct, ok, total, qs, st);
   }
   function keyH(e) {
     if (!document.body.contains(c) || route.name !== cfg.routeName) { document.removeEventListener('keydown', keyH); return; }
@@ -796,6 +990,7 @@ function runQuiz(c, cfg) {
   }
   document.addEventListener('keydown', keyH);
   draw();
+  startTimer();
 }
 function needsKeyboard() { return S.lang === 'ko' || S.lang === 'ja'; }
 /* ===== KEYBOARD VIRTUAL LENGKAP KO/JA + MESIN PENYUSUN HANGUL =====
@@ -1145,7 +1340,7 @@ function pageReading(c, p) {
     '<div class="card" style="margin-top:16px"><p class="small muted" style="margin-bottom:8px">Ketuk kata mana pun di kalimat untuk melihat artinya & menambahkannya ke kartu hafalan.</p>' + r.sentences.map(s => '<div class="sent-line"><span>' + tapWords(s[0]) + '</span> ' + ttsBtn(s[0]) + '<small>' + esc(s[1]) + '</small></div>').join('') +
     (r.vocab && r.vocab.length ? '<div class="sect-label">Vocab bacaan ini</div><div class="chiprow">' + r.vocab.map(v => '<span class="chip">' + esc(v) + '</span>').join('') + '</div>' : '') + '</div>' +
     '<div class="card" style="margin-top:16px"><div class="sect-label" style="margin-top:0">Pertanyaan pemahaman</div>' +
-    r.questions.map((q, qi) => '<div style="margin:14px 0"><b>' + (qi + 1) + '. ' + esc(q[0]) + '</b><div class="chiprow" style="margin-top:8px">' + q[1].map((o, oi) => '<button type="button" class="chip" data-rq="' + qi + ':' + oi + '">' + esc(o) + '</button>').join('') + '</div><p class="small" id="rq-fb-' + qi + '" style="margin-top:6px"></p></div>').join('') + '</div></div>';
+    r.questions.map((q, qi) => '<div style="margin:14px 0"><b>' + (qi + 1) + '. ' + esc(q[0]) + '</b><div class="chiprow" style="margin-top:8px">' + q[1].map((o, oi) => '<button type="button" class="chip" data-rq="' + qi + ':' + oi + '">' + esc(o) + '</button>').join('') + '</div><p class="small" id="rq-fb-' + qi + '" style="margin-top:6px"></p></div>').join('') + '</div><div style="margin-top:16px"><button type="button" class="btn white" data-crumb="readings">← Kembali ke daftar Bacaan</button></div></div>';
   bindCrumb(c);
   $$('[data-tw]', c).forEach(b => b.onclick = () => {
     let panel = $('#tap-panel', c);
@@ -1587,7 +1782,7 @@ function pageExams(c) {
   const tabs = [['prep', 'Persiapan Ujian'], ['sim', 'Simulasi Ujian'], ['strat', 'Strategi Ujian'], ['plan', 'Rencana Belajar']];
   let body = '';
   if (examTab === 'prep') body = '<div class="grid4" style="margin-top:16px">' + cards[S.lang].map((x, i) => '<button type="button" class="read-card" data-exam="' + i + '"><b style="font-size:16px">' + x[0] + '</b><p class="muted small" style="margin:6px 0">' + x[1] + '</p><p class="small">' + x[2] + '</p></button>').join('') + '</div>';
-  else if (examTab === 'sim') body = '<div class="card" style="margin-top:16px"><b>Mulai simulasi</b><p class="muted" style="margin:6px 0 12px">Simulasi memakai mesin kuis yang sama dengan kuis modul — satu soal per layar, pembahasan setelah menjawab.</p><div class="chiprow">' + simButtons() + '</div></div>';
+  else if (examTab === 'sim') body = simTabHTML();
   else if (examTab === 'strat') body = '<div class="card" style="margin-top:16px"><b>Strategi yang terbukti membantu</b><p style="margin-top:8px">1) Kerjakan soal mudah dulu, tandai yang sulit, kembali lagi nanti. 2) Untuk soal kosakata, baca kalimat sesudah kata yang ditanya — konteks biasanya memberi petunjuk. 3) Jangan kosongkan jawaban: tebakan teredukasi selalu lebih baik dari kosong. 4) Sisakan 10% waktu terakhir untuk memeriksa.</p></div>';
   else body = '<div class="card" style="margin-top:16px"><b>Rencana belajar 15 menit/hari</b><p style="margin-top:8px">Senin–Jumat: 1 sesi harian DidiGo (pelajaran + kuis). Sabtu: 1 simulasi ujian. Minggu: review kartu hafalan yang jatuh tempo + 1 bacaan. Konsisten kecil mengalahkan belajar maraton sesekali.</p></div>';
   c.innerHTML = '<div class="wrap"><h1 class="page">Persiapan ujian untuk semua bahasa.</h1><p class="sub">Setiap halaman ujian memiliki simulasi, strategi, dan pembuat rencana belajar dalam satu tempat. Fokus DidiGo: ' + LANGMETA[S.lang].exams + '.</p>' +
@@ -1596,22 +1791,89 @@ function pageExams(c) {
   $$('[data-exam]', c).forEach(b => b.onclick = () => { if (S.lang === 'ko' && b.dataset.exam === '2') { go('eps'); return; } examTab = 'sim'; pageExams(c); });
   bindSimButtons(c);
 }
-function simButtons() {
-  if (S.lang === 'en') return DG.mocks.map((m, i) => '<button type="button" class="btn' + (i ? ' white' : '') + '" data-sim="mock' + i + '">' + esc(m.name) + ' (' + m.questions.length + ' soal)</button>').join(' ');
-  if (S.lang === 'ko') return '<button type="button" class="btn" data-sim="topik1">Simulasi TOPIK I</button> <button type="button" class="btn white" data-sim="topik2">Simulasi TOPIK II</button> <button type="button" class="btn white" data-sim="komockL">Mock TOPIK — Listening (' + DG.komockL.length + ' soal)</button> <button type="button" class="btn white" data-sim="komockR">Mock TOPIK — Reading (' + DG.komockR.length + ' soal)</button>';
-  return '<button type="button" class="btn" data-sim="jlpt">Simulasi JLPT (12 soal)</button>';
+/* Daftar simulasi ujian per bahasa — dipakai tab Simulasi Ujian (ala Volingo). */
+/* Tiap simulasi punya 2 mode: MINI (latihan cepat) dan FULL LENGTH (jumlah soal + waktu
+   sama seperti ujian aslinya). Durasi mengikuti kecepatan soal ujian asli:
+   IELTS 1,5 mnt/soal (40 soal/60 mnt), TOEFL Reading ~1,75 mnt/soal (20 soal/35 mnt),
+   TOEIC Reading 0,75 mnt/soal (100 soal/75 mnt), Cambridge R&UoE ~1,4 mnt/soal (52 soal/75 mnt),
+   TOPIK I ~1,4 mnt/soal (70 soal/100 mnt), TOPIK II ~1,7 mnt/soal (105 soal/180 mnt),
+   JLPT ~1 mnt/soal, EPS-TOPIK 1,25 mnt/soal (40 soal/50 mnt). */
+function simList() {
+  if (S.lang === 'en') return DG.mocks.map((m, i) => {
+    const full = [{ count: 40, minutes: 60 }, { count: 20, minutes: 35 }, { count: 100, minutes: 75 }, { count: 52, minutes: 75 }][i];
+    const mini = [{ count: 20, minutes: 30 }, { count: 10, minutes: 20 }, { count: 20, minutes: 15 }, { count: 20, minutes: 30 }][i];
+    return { kind: 'mock' + i, name: m.name, desc: 'Bahasa Inggris', mini: mini, full: full, pass: 70 };
+  });
+  if (S.lang === 'ko') return [
+    { kind: 'topik1', name: 'TOPIK I', desc: 'Level 1–2', mini: { count: 20, minutes: 30 }, full: { count: 70, minutes: 100 }, pass: 70 },
+    { kind: 'topik2', name: 'TOPIK II', desc: 'Level 3–6', mini: { count: 20, minutes: 35 }, full: { count: 105, minutes: 180 }, pass: 70 },
+    { kind: 'komockL', name: 'TOPIK Mock — Listening', desc: 'Simulasi penuh', mini: { count: DG.komockL.length, minutes: 20 }, full: null, pass: 70 },
+    { kind: 'komockR', name: 'TOPIK Mock — Reading', desc: 'Simulasi penuh', mini: { count: DG.komockR.length, minutes: 20 }, full: null, pass: 70 },
+    { kind: 'eps', name: 'EPS-TOPIK', desc: 'Kerja ke Korea', mini: { count: 30, minutes: 40 }, full: { count: 40, minutes: 50 }, pass: 70 },
+  ];
+  return [
+    { kind: 'jlpt-n5', name: 'JLPT N5', desc: 'Pemula', mini: { count: 20, minutes: 25 }, full: { count: 100, minutes: 105 }, pass: 70 },
+    { kind: 'jlpt-n4', name: 'JLPT N4', desc: 'Menengah dasar', mini: { count: 20, minutes: 30 }, full: { count: 100, minutes: 125 }, pass: 70 },
+    { kind: 'jlpt-n3', name: 'JLPT N3', desc: 'Menengah', mini: { count: 20, minutes: 35 }, full: { count: 100, minutes: 140 }, pass: 70 },
+  ];
+}
+/* Tab Simulasi Ujian ala Volingo: kartu unggulan + daftar ujian lainnya. */
+function simTabHTML() {
+  const sims = simList();
+  const feat = sims[0], rest = sims.slice(1);
+  const stat = (v, l) => '<div style="flex:1;background:var(--cream);border-radius:12px;padding:10px 4px;text-align:center"><b style="font-size:18px;display:block">' + v + '</b><span class="muted small">' + l + '</span></div>';
+  const modeBtns = x => {
+    let h = '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    h += '<button type="button" class="btn" data-sim="' + x.kind + '" data-mode="mini">Mini · ' + x.mini.count + ' soal · ' + x.mini.minutes + ' mnt ▸</button>';
+    if (x.full) h += '<button type="button" class="btn red" data-sim="' + x.kind + '" data-mode="full">Full Length · ' + x.full.count + ' soal · ' + x.full.minutes + ' mnt ▸</button>';
+    return h + '</div>';
+  };
+  return '<h1 class="page" style="margin-top:16px">Simulasi Ujian</h1>' +
+    '<p class="sub">Kerjakan dengan batas waktu, lalu lihat skor dan pembahasannya. Pilih Mini untuk latihan cepat, atau Full Length untuk jumlah soal dan waktu yang sama seperti ujian aslinya.</p>' +
+    '<div class="card" style="margin-top:16px"><div class="sect-label" style="margin-top:0">' + esc(feat.desc) + '</div>' +
+    '<b style="font-size:20px">' + esc(feat.name) + '</b>' +
+    '<p class="muted small" style="margin:6px 0 14px">' + esc(LANGMETA[S.lang].name) + ' · Batas lulus ' + feat.pass + '%</p>' +
+    '<div style="display:flex;gap:10px;margin-bottom:16px">' + stat(feat.mini.count + ' / ' + (feat.full ? feat.full.count : '—'), 'SOAL MINI / FULL') + stat(feat.mini.minutes + ' / ' + (feat.full ? feat.full.minutes : '—'), 'MENIT MINI / FULL') + stat(feat.pass + '%', 'BATAS LULUS') + '</div>' +
+    modeBtns(feat) + '</div>' +
+    (rest.length ? '<div class="sect-label" style="margin-top:22px">UJIAN LAINNYA</div>' +
+      rest.map(x => '<div class="card" style="margin-bottom:10px"><b>' + esc(x.name) + '</b><br><span class="muted small">' + esc(x.desc) + ' · Batas lulus ' + x.pass + '%</span><div style="margin-top:10px">' + modeBtns(x) + '</div></div>').join('') : '');
+}
+function startSim(c, kind, mode) {
+  const sim = simList().find(x => x.kind === kind);
+  if (!sim) return;
+  const cfg = (mode === 'full' && sim.full) ? sim.full : sim.mini;
+  if (kind === 'eps') { go('eps'); return; }
+  let qs = [], title = sim.name;
+  if (kind.startsWith('mock')) { const m = DG.mocks[+kind.slice(4) || 0]; title = m.name; qs = m.questions.map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal mock test ujian Bahasa Inggris — situasinya ada di kalimat/teks soalnya. Baca utuh dulu, lalu pilih jawaban yang paling tepat untuk situasi itu.', explain: q[3] })); }
+  if (kind === 'topik1' || kind === 'topik2') { const bank = kind === 'topik1' ? DG.topik1 : DG.topik2; title = kind === 'topik1' ? 'TOPIK I — Simulasi' : 'TOPIK II — Simulasi'; qs = shuffle(bank, 5).slice(0, cfg.count).map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal simulasi TOPIK — kata atau pola di dalam kalimat Korea itu sedang ditanyakan. Baca kalimatnya utuh dulu, lalu pilih jawaban yang paling tepat.', explain: q[3] + (q[4] ? ' ' + q[4] : '') })); }
+  if (kind === 'komockL' || kind === 'komockR') { const bank = kind === 'komockL' ? DG.komockL : DG.komockR; title = kind === 'komockL' ? 'TOPIK Mock — Listening' : 'TOPIK Mock — Reading'; qs = bank.map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: kind === 'komockL' ? 'Soal listening TOPIK — bayangkan kamu mendengar percakapan itu di situasi nyata, perhatikan angka dan kata kuncinya, lalu jawab maksudnya.' : 'Soal reading TOPIK — baca teks pendeknya kata per kata; jawaban yang benar tertulis di dalam teks itu.', explain: q[3] + (q[4] ? ' ' + q[4] : '') })); }
+  if (kind.startsWith('jlpt-')) { const lvl = kind.slice(5).toUpperCase(); const bank = DG.jlpt.filter(q => q.level === lvl); title = 'JLPT ' + lvl + ' — Simulasi'; qs = shuffle(bank, 9).slice(0, cfg.count).map(q => ({ type: 'mc', prompt: (q.passage ? q.passage + ' — ' : '') + q.q + ' (' + q.level + ' · ' + q.skill + ')', options: q.options, answer: q.answer, context: 'Soal simulasi JLPT ' + q.level + ' (' + q.skill + ') — baca teks Jepangnya pelan-pelan, cari kata kunci yang ditanyakan, lalu pilih jawaban yang paling tepat.', explain: q.explain })); }
+  runQuiz(c, { routeName: 'exams', skill: kind === 'komockL' ? 'listen' : 'read', tag: title, title: 'SIMULASI · ' + title.toUpperCase(), sub: (mode === 'full' ? 'Full Length · ' : 'Mini · ') + 'Batas waktu ' + cfg.minutes + ' menit · Target lulus ' + sim.pass + '%.', minutes: cfg.minutes, questions: qs,
+    finish(cc, pct, ok, total, qs2, st2) {
+      const passed = pct >= sim.pass;
+      if (passed) awardBonus(10, 'simulasi');
+      const review = (qs2 || []).map((q, i) => {
+        const s2 = (st2 || [])[i] || {};
+        const userAns = q.type === 'mc' ? (s2.sel != null ? q.options[s2.sel] : 'Tidak dijawab') : (s2.text || 'Tidak dijawab');
+        const rightAns = q.type === 'mc' ? q.options[q.answer] : q.answer;
+        const good = s2.submitted && s2.correct;
+        return '<div class="card" style="margin-bottom:10px"><b>' + (i + 1) + '. ' + esc(q.prompt) + '</b>' +
+          '<p class="small" style="margin-top:6px">Jawabanmu: <b style="color:' + (good ? 'var(--green)' : 'var(--red)') + '">' + esc(userAns) + '</b>' + (good ? ' ✓' : '') + '</p>' +
+          (good ? '' : '<p class="small">Jawaban benar: <b>' + esc(rightAns) + '</b></p>') +
+          '<p class="muted small" style="margin-top:4px">' + esc(q.explain || '') + '</p></div>';
+      }).join('');
+      cc.innerHTML = '<div class="wrap"><div class="card" style="max-width:560px;margin:30px auto;text-align:center"><div class="sect-label">Hasil simulasi</div>' +
+        '<h1 class="page">' + pct + '%</h1>' +
+        '<p style="font-size:18px;font-weight:700;color:' + (passed ? 'var(--green)' : 'var(--red)') + '">' + (passed ? 'LULUS ✓' : 'BELUM LULUS') + '</p>' +
+        '<p class="muted">' + ok + '/' + total + ' benar · Batas lulus ' + sim.pass + '%.' + (passed ? ' +10 XP bonus.' : '') + '</p>' +
+        '<div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" class="btn" id="sim-retry">Ulangi simulasi</button><button type="button" class="btn white" id="sim-back">← Kembali ke Simulasi Ujian</button></div></div>' +
+        '<div class="sect-label">Pembahasan</div>' + review + '</div>';
+      const rt = document.getElementById('sim-retry'); if (rt) rt.onclick = () => startSim(cc, kind);
+      const bk = document.getElementById('sim-back'); if (bk) bk.onclick = () => { examTab = 'sim'; go('exams'); };
+    } });
 }
 function bindSimButtons(c) {
-  $$('[data-sim]', c).forEach(b => b.onclick = () => {
-    const kind = b.dataset.sim;
-    let qs = [], title = '';
-    if (kind.startsWith('mock')) { const m = DG.mocks[+kind.slice(4) || 0]; title = m.name; qs = m.questions.map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal mock test ujian Bahasa Inggris — situasinya ada di kalimat/teks soalnya. Baca utuh dulu, lalu pilih jawaban yang paling tepat untuk situasi itu.', explain: q[3] })); }
-    if (kind === 'topik1' || kind === 'topik2') { const bank = kind === 'topik1' ? DG.topik1 : DG.topik2; title = kind === 'topik1' ? 'TOPIK I — Simulasi' : 'TOPIK II — Simulasi'; qs = shuffle(bank, 5).slice(0, 10).map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal simulasi TOPIK — kata atau pola di dalam kalimat Korea itu sedang ditanyakan. Baca kalimatnya utuh dulu, lalu pilih jawaban yang paling tepat.', explain: q[3] + (q[4] ? ' ' + q[4] : '') })); }
-    if (kind === 'komockL' || kind === 'komockR') { const bank = kind === 'komockL' ? DG.komockL : DG.komockR; title = kind === 'komockL' ? 'TOPIK Mock — Listening' : 'TOPIK Mock — Reading'; qs = bank.map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: kind === 'komockL' ? 'Soal listening TOPIK — bayangkan kamu mendengar percakapan itu di situasi nyata, perhatikan angka dan kata kuncinya, lalu jawab maksudnya.' : 'Soal reading TOPIK — baca teks pendeknya kata per kata; jawaban yang benar tertulis di dalam teks itu.', explain: q[3] + (q[4] ? ' ' + q[4] : '') })); }
-    if (kind === 'jlpt') { qs = shuffle(DG.jlpt, 9).slice(0, 12).map(q => ({ type: 'mc', prompt: (q.passage ? q.passage + ' — ' : '') + q.q + ' (' + q.level + ' · ' + q.skill + ')', options: q.options, answer: q.answer, context: 'Soal simulasi JLPT ' + q.level + ' (' + q.skill + ') — baca teks Jepangnya pelan-pelan, cari kata kunci yang ditanyakan, lalu pilih jawaban yang paling tepat.', explain: q.explain })); title = 'JLPT — Simulasi'; }
-    runQuiz(c, { routeName: 'exams', skill: kind === 'komockL' ? 'listen' : 'read', tag: title, title: 'SIMULASI · ' + title.toUpperCase(), sub: 'Mode latihan: pembahasan muncul setelah tiap jawaban. Target 70%.', questions: qs,
-      finish(cc, pct, ok, total) { if (pct >= 70) awardBonus(10, 'simulasi'); cc.innerHTML = '<div class="wrap"><div class="card" style="max-width:560px;margin:30px auto;text-align:center"><div class="sect-label">Hasil simulasi</div><h1 class="page">' + pct + '%</h1><p class="muted">' + ok + '/' + total + ' benar.' + (pct >= 70 ? ' +10 XP bonus.' : '') + '</p><button type="button" class="btn" style="margin-top:14px" id="sim-back">Kembali ke Persiapan Ujian</button></div></div>'; $('#sim-back', cc).onclick = () => go('exams'); } });
-  });
+  $$('[data-sim]', c).forEach(b => b.onclick = () => startSim(c, b.dataset.sim, b.dataset.mode || 'mini'));
 }
 
 /* ===== CHEAT SHEET (8 lembar per bahasa — isi v16) ===== */
@@ -1898,7 +2160,17 @@ const EPS_READING = [
   ['월급은 매달 25일에 받습니다. Gaji diterima setiap tanggal:', ['15', '20', '25', '30'], 2, '월급 = gaji bulanan; 매달 25일 = tanggal 25 setiap bulan.'],
   ['불이 나면 바로 계단으로 나가세요. Saat kebakaran, keluar lewat:', ['lift', 'tangga', 'jendela', 'atap'], 1, '불이 나면 = kalau ada kebakaran; 계단 = tangga — jangan pakai lift saat kebakaran.'],
   ['전기를 조심하세요. 위험합니다. Kalimat kedua berarti:', ['Gelap', 'Berbahaya', 'Dingin', 'Berisik'], 1, '위험합니다 = berbahaya — instruksi keselamatan inti EPS-TOPIK.'],
-  ['점심시간에는 쉬고 오후에 작업합니다. Setelah makan siang penutur:', ['pulang', 'istirahat lalu bekerja lagi', 'tidur di pabrik', 'pergi ke rumah sakit'], 1, '쉬고 = beristirahat lalu; 오후에 작업합니다 = bekerja di sore hari.']
+  ['점심시간에는 쉬고 오후에 작업합니다. Setelah makan siang penutur:', ['pulang', 'istirahat lalu bekerja lagi', 'tidur di pabrik', 'pergi ke rumah sakit'], 1, '쉬고 = beristirahat lalu; 오후에 작업합니다 = bekerja di sore hari.'],
+  ["이 망치는 무겁습니다. '망치' artinya:",["palu","obeng","gergaji","tang"],0,"망치 = palu (hammer)."],
+  ["높은 곳에서 일할 때는 안전벨트를 매야 합니다. '안전벨트' artinya:",["helm","sabuk pengaman","sarung tangan","sepatu"],1,"안전벨트 = sabuk pengaman (safety belt)."],
+  ["시급은 1만 원입니다. '시급' artinya:",["gaji bulanan","tunjangan","upah per jam","uang lembur"],2,"시급 = upah per jam."],
+  ["근무 시간은 오전 9시부터 오후 6시까지입니다. Jam kerja dari pukul:",["08.00–17.00","09.00–17.00","10.00–18.00","09.00–18.00"],3,"오전 9시부터 오후 6시까지 = dari jam 9 pagi sampai jam 6 sore."],
+  ["기계가 고장 났어요. '고장 났어요' artinya:",["baru","rusak","bersih","cepat"],1,"고장 나다 = rusak."],
+  ["이 렌치는 볼트를 조이는 데 씁니다. '렌치' artinya:",["palu","kunci pas","gergaji","obeng"],1,"렌치 = kunci pas (wrench); 볼트 = baut, 조이다 = mengencangkan."],
+  ["작업할 때는 작업복을 입어야 합니다. '작업복' artinya:",["sepatu kerja","topi kerja","seragam kerja","sarung tangan"],2,"작업복 = seragam/pakaian kerja; 입다 = memakai (pakaian)."],
+  ["오늘은 휴일입니다. 공장에 가지 않습니다. Hari ini:",["libur, tidak masuk pabrik","masuk kerja seperti biasa","lembur sampai malam","pindah ke pabrik lain"],0,"휴일 = hari libur; 공장에 가지 않습니다 = tidak pergi ke pabrik."],
+  ["식당에서 점심을 먹습니다. '식당' artinya:",["kantor","gudang","kantin / ruang makan","toilet"],2,"식당 = kantin/ruang makan; 점심 = makan siang."],
+  ["전기가 나갔어요. '전기가 나갔어요' artinya:",["listrik menyala","listrik terlalu kuat","listrik baru dipasang","listrik mati / padam"],3,"전기가 나가다 = listrik mati/padam."],
 ];
 const EPS_LISTEN = [
   ['[Dengarkan] 남자: \'지금 몇 시에 출근해요?\' 여자: \'아침 8시에 출근해요.\' → Perempuan masuk kerja pukul:', ['07.00', '08.00', '09.00', '18.00'], 1, '출근 = masuk kerja; 아침 8시 = pukul 8 pagi.'],
@@ -1910,9 +2182,20 @@ const EPS_LISTEN = [
   ['[Dengarkan] 남자: \'월급날이 언제예요?\' 여자: \'매달 10일이에요.\' → Hari gajian tanggal:', ['1', '5', '10', '25'], 2, '월급날 = hari gajian; 매달 10일 = tanggal 10 setiap bulan.'],
   ['[Dengarkan] 상사: \'장갑을 끼고 작업하세요.\' → Pekerja harus bekerja memakai:', ['helm', 'sarung tangan', 'masker', 'kacamata'], 1, '장갑을 끼고 = memakai sarung tangan lalu…'],
   ['[Dengarkan] 여자: \'퇴근하고 집에서 쉬고 싶어요.\' → Sesudah pulang kerja perempuan ingin:', ['lembur', 'belanja', 'istirahat di rumah', 'pergi ke pabrik'], 2, '퇴근하고 = setelah pulang kerja; 쉬고 싶어요 = ingin istirahat.'],
-  ['[Dengarkan] 남자: \'다쳤어요!\' 여자: \'빨리 병원에 가요.\' → Laki-laki itu:', ['lapar', 'terluka', 'mengantuk', 'terlambat'], 1, '다쳤어요 = (saya) terluka; 빨리 병원에 가요 = ayo cepat ke rumah sakit.']
+  ['[Dengarkan] 남자: \'다쳤어요!\' 여자: \'빨리 병원에 가요.\' → Laki-laki itu:', ['lapar', 'terluka', 'mengantuk', 'terlambat'], 1, '다쳤어요 = (saya) terluka; 빨리 병원에 가요 = ayo cepat ke rumah sakit.'],
+  ["[Dengarkan] 상사: '이 드라이버를 가져오세요.' → Atasan meminta mengambil:",["palu","obeng","gergaji","tang"],1,"드라이버 = obeng (screwdriver)."],
+  ["[Dengarkan] 상사: '작업할 때는 마스크를 쓰세요.' → Pekerja harus memakai:",["helm","kacamata","masker","sarung tangan"],2,"마스크 = masker."],
+  ["[Dengarkan] 남자: '쉬는 시간이 언제예요?' 여자: '오후 3시예요.' → Waktu istirahat pukul:",["15.00","12.00","14.00","16.00"],0,"쉬는 시간 = waktu istirahat; 오후 3시 = 15.00."],
+  ["[Dengarkan] 남자: '야근 수당은 얼마예요?' 여자: '시간당 5천 원이에요.' → Uang lembur per jam:",["3.000 won","10.000 won","15.000 won","5.000 won"],3,"야근 수당 = uang lembur; 시간당 5천 원 = 5.000 won per jam."],
+  ["[Dengarkan] 남자: '손을 다쳤어요!' 여자: '빨리 구급상자를 가져오세요.' → Yang diminta perempuan:",["memanggil ambulans","pergi ke rumah sakit","membawa kotak P3K","beristirahat"],2,"구급상자 = kotak P3K; 손을 다쳤어요 = tangan saya terluka."],
+  ["[Dengarkan] 여자: '이 톱을 쓰세요.' → Perempuan menyuruh memakai:",["gergaji","palu","obeng","kunci pas"],0,"톱 = gergaji (saw); 쓰세요 = pakailah."],
+  ["[Dengarkan] 상사: '오늘은 휴일입니다. 쉬세요.' → Hari ini:",["masuk kerja","lembur","libur, istirahat","rapat"],2,"휴일 = hari libur; 쉬세요 = beristirahatlah."],
+  ["[Dengarkan] 남자: '점심은 몇 시예요?' 여자: '12시예요.' → Makan siang pukul:",["11.00","12.00","13.00","10.00"],1,"12시 = pukul 12."],
+  ["[Dengarkan] 남자: '어디가 아파요?' 여자: '다리가 아파요.' → Perempuan sakit:",["kepala","tangan","perut","kaki"],3,"다리 = kaki; 아파요 = sakit."],
+  ["[Dengarkan] 상사: '내일 아침 8시까지 오세요.' → Besok harus datang pukul:",["07.00","09.00","08.00","18.00"],2,"내일 아침 8시까지 = paling lambat besok pagi pukul 8."],
 ];
 function epsQuestions(kind) {
+  if (kind === 'mini') return shuffle(EPS_READING, 11).slice(0, 15).concat(shuffle(EPS_LISTEN, 13).slice(0, 15)).map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal EPS-TOPIK — situasi kerja dan kehidupan sehari-hari di Korea. Baca/dengarkan situasinya, perhatikan kosakata keselamatannya, lalu pilih jawaban yang paling tepat.', explain: q[3] }));
   const src = kind === 'read' ? EPS_READING : kind === 'listen' ? EPS_LISTEN : EPS_READING.concat(EPS_LISTEN);
   return src.map(q => ({ type: 'mc', prompt: q[0], options: q[1], answer: q[2], context: 'Soal EPS-TOPIK — situasi kerja dan kehidupan sehari-hari di Korea. Baca/dengarkan situasinya, perhatikan kosakata keselamatannya, lalu pilih jawaban yang paling tepat.', explain: q[3] }));
 }
@@ -1922,11 +2205,11 @@ function pageEPS(c) {
     '<div class="sect-label">Kosakata kerja & keselamatan (' + EPS_VOCAB.length + ' kata prioritas)</div><div class="card" style="padding:6px 20px">' +
     EPS_VOCAB.map(w => '<div class="sent-line"><b>' + esc(w[0]) + '</b> ' + ttsBtn(w[0]) + ' <span class="muted">(' + esc(w[1]) + ') — ' + esc(w[2]) + '</span></div>').join('') + '</div>' +
     '<div class="sect-label">Latihan & simulasi EPS-TOPIK</div><div class="card"><p class="muted" style="margin-bottom:12px">Format asli: Listening 25 + Reading 25 soal pilihan ganda. Simulasi di sini memakai bank soal EPS (reading + listening dengan transkrip yang bisa didengarkan lewat tombol suara di pelajaran/dikte) — skor dan pembahasan muncul seperti kuis modul.</p><div class="chiprow">' +
-    '<button type="button" class="btn" data-eps="read">Bank Soal Reading (' + EPS_READING.length + ' soal)</button><button type="button" class="btn white" data-eps="listen">Bank Soal Listening (' + EPS_LISTEN.length + ' soal)</button><button type="button" class="btn red" data-eps="full">Simulasi EPS-TOPIK (20 soal)</button></div></div>' +
+    '<button type="button" class="btn" data-eps="read">Bank Soal Reading (' + EPS_READING.length + ' soal)</button><button type="button" class="btn white" data-eps="listen">Bank Soal Listening (' + EPS_LISTEN.length + ' soal)</button><button type="button" class="btn" data-eps="mini">Mini · 30 soal · 40 mnt ▸</button><button type="button" class="btn red" data-eps="full">Full Length · 40 soal · 50 mnt ▸</button></div></div>' +
     '<div class="sect-label">Tips lulus</div><div class="card"><p>1) Hafalkan kosakata keselamatan & alat kerja dulu — porsinya paling besar. 2) Kuasai pola instruksi sopan: -세요 (…lah), -아야/어야 합니다 (harus…). 3) Angka & waktu (교대, 출근, 퇴근, 월급날) selalu keluar. 4) Untuk listening, tulis angka/kata kunci yang terdengar SEBELUM membaca pilihan. 5) Latih dikte kata instruksi kerja tiap minggu.</p></div></div>';
   $$('[data-eps]', c).forEach(b => b.onclick = () => {
     const kind = b.dataset.eps;
-    runQuiz(c, { routeName: 'eps', skill: kind === 'listen' ? 'listen' : 'read', tag: 'EPS-TOPIK', title: 'EPS-TOPIK · ' + (kind === 'full' ? 'SIMULASI PENUH' : kind === 'read' ? 'READING' : 'LISTENING'), sub: 'Bank soal EPS-TOPIK (isi v16 + soal latihan lengkap). Target lulus simulasi: 70%.', questions: epsQuestions(kind),
+    runQuiz(c, { routeName: 'eps', skill: kind === 'listen' ? 'listen' : 'read', tag: 'EPS-TOPIK', title: 'EPS-TOPIK · ' + (kind === 'full' ? 'FULL LENGTH' : kind === 'mini' ? 'MINI' : kind === 'read' ? 'READING' : 'LISTENING'), sub: 'Bank soal EPS-TOPIK (isi v16 + soal latihan lengkap). Target lulus simulasi: 70%.' + (kind === 'full' ? ' Batas waktu 50 menit.' : kind === 'mini' ? ' Batas waktu 40 menit.' : ''), minutes: kind === 'full' ? 50 : kind === 'mini' ? 40 : 0, questions: epsQuestions(kind),
       finish(cc, pct, ok, total) { if (pct >= 70) awardBonus(10, 'eps-topik'); cc.innerHTML = '<div class="wrap"><div class="card" style="max-width:560px;margin:30px auto;text-align:center"><div class="sect-label">Hasil EPS-TOPIK</div><h1 class="page">' + pct + '%</h1><p class="muted">' + ok + '/' + total + ' benar.' + (pct >= 70 ? ' Di atas ambang latihan — pertahankan!' : ' Ulangi kosakata keselamatannya, lalu coba lagi.') + '</p><button type="button" class="btn" style="margin-top:14px" id="eps-back">Kembali ke EPS-TOPIK</button></div></div>'; $('#eps-back', cc).onclick = () => go('eps'); } });
   });
 }

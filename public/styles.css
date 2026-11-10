@@ -292,9 +292,10 @@ img,svg,table{max-width:100%}
   .kbd-space{flex-basis:110px}
   #tts-pop{max-width:92vw;flex-wrap:wrap}
   #bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:55;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:2px}
-  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;border-radius:12px;padding:6px 2px;font-size:11px;font-weight:700;color:var(--ink-2)}
+  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11px;font-weight:700;color:var(--ink-2);min-height:56px}
   .bn-item.active{background:var(--pink);color:var(--ink)}
-  .bn-item svg{width:20px;height:20px}
+  .bn-item svg{width:22px;height:22px;flex:none}
+  .bn-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   .quiz-actions .btn{flex:1 1 auto;justify-content:center}
   .fill-input{font-size:18px}
   .dialog-line .who{font-size:12px}
@@ -304,7 +305,6 @@ img,svg,table{max-width:100%}
 /* Ponsel landscape: bottom-nav tetap ramping */
 @media (max-width:760px) and (orientation:landscape){
   #content{padding-bottom:104px}
-  .bn-item{flex-direction:row;justify-content:center}
 }
 
 /* ===== SIDEBAR SCROLL TUNTAS: seluruh isi sidebar/laci bisa digeser =====
@@ -472,7 +472,7 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
   .card{padding:clamp(14px,3vw,18px)}
   #version-badge{display:none}
   #bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:2px}
-  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11px;font-weight:700;color:var(--ink-2);min-height:52px}
+  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11px;font-weight:700;color:var(--ink-2);min-height:56px}
   .bn-item.active{background:var(--pink);color:var(--red)}
   .srs-strip{flex-direction:column;align-items:flex-start}
   canvas,.write-canvas{max-width:100%}
@@ -485,12 +485,11 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
 /* HP landscape: ruang bawah lebih ramping, bottom-nav tetap tidak menutupi */
 @media (max-width:900px) and (orientation:landscape){
   #content{padding-bottom:118px}
-  .bn-item{flex-direction:row;justify-content:center;min-height:46px}
 }
 /* Tablet 641–1024: bottom-nav 5 tombol tetap ada + ruang bawah cukup */
 @media (min-width:641px) and (max-width:1024px){
   #bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:2px}
-  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11.5px;font-weight:700;color:var(--ink-2);min-height:52px}
+  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11.5px;font-weight:700;color:var(--ink-2);min-height:56px}
   .bn-item.active{background:var(--pink);color:var(--red)}
   #content{padding-bottom:124px}
   #version-badge{display:none}
