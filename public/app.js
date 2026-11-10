@@ -2227,7 +2227,7 @@ function pageTutor(c) {
   function draw() {
     const priv = !!S.tutorPrivate;
     c.innerHTML = '<div class="wrap"><h1 class="page">Tutor AI — Bahasa ' + LANGMETA[S.lang].name + '</h1>' +
-      '<p class="sub">Tutor AI DidiGo berbasis Google Gemini (bukan Muse — Muse tidak menyediakan API publik untuk dipasang ke web seperti ini). Tutor tahu bahasa aktifmu (' + LANGMETA[S.lang].name + ') dan jenjangmu (' + tutorLevel() + '), dan menyesuaikan penjelasannya.</p>' +
+      '<p class="sub">Tutor AI DidiGo berbasis Google Gemini (bukan Muse — Muse tidak menyediakan API publik untuk dipasang ke web seperti ini). Tutor membantumu belajar Bahasa Inggris, Korea, dan Jepang. Bahasa aktifmu (' + LANGMETA[S.lang].name + ') dan jenjangmu (' + tutorLevel() + ') dipakai untuk menyesuaikan penjelasannya — tapi kamu boleh bertanya tentang ketiganya.</p>' +
       '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><span class="chip">' + (priv ? 'Mode Privat AKTIF — tidak ada data yang keluar' : TUTOR_AI_URL ? 'Tutor AI aktif' : 'Tutor AI belum aktif') + '</span>' +
       '<button type="button" class="btn ' + (priv ? '' : 'white') + ' small" id="tu-priv">Mode Privat: ' + (priv ? 'AKTIF' : 'nonaktif') + '</button></div>' +
       '<p class="small muted" style="margin-top:8px">Yang dikirim ke AI hanya pertanyaan yang kamu ketik di chat ini + bahasa & jenjangmu — BUKAN nama, email, XP, progres, atau data akunmu. Mode Privat mematikan Tutor AI sepenuhnya: tidak ada satu huruf pun yang keluar dari web; yang menjawab hanya bantuan berbasis aturan dari materi DidiGo.</p></div>' +
