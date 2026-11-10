@@ -20,7 +20,7 @@ const LEVELS = DG.levels.map(l => l.code);
 
 /* ===== State (localStorage; Supabase bila login & terkonfigurasi) ===== */
 const SKEY = 'didigo-v21-state';
-function blankLangState() { return { done: {}, xp: 0, streak: 0, lastDay: '', freezes: 1, srs: {}, placement: '', minutes: {}, errLog: [], skillStats: {}, skills: { read: { ok: 0, total: 0 }, listen: { ok: 0, total: 0 }, speak: { ok: 0, total: 0 }, write: { ok: 0, total: 0 } }, flags: {}, srsCustom: {} }; }
+function blankLangState() { return { done: {}, xp: 0, streak: 0, lastDay: '', freezes: 1, srs: {}, placement: '', minutes: {}, errLog: [], skillStats: {}, skills: { read: { ok: 0, total: 0 }, listen: { ok: 0, total: 0 }, speak: { ok: 0, total: 0 }, write: { ok: 0, total: 0 } }, flags: {}, srsCustom: {}, session: { date: '', lesson: false, read: false } }; }
 let S;
 try { S = JSON.parse(localStorage.getItem(SKEY)) || null; } catch (e) { S = null; }
 if (!S || !S.langs) S = { lang: 'en', user: null, name: '', journal: [], bookmarks: [], langs: { en: blankLangState(), ko: blankLangState(), ja: blankLangState() } };
@@ -231,8 +231,19 @@ function pickDialogVoice(langCode, gender) {
 window.pickDialogVoice = pickDialogVoice;
 window.__didigoPickVoice = pickDialogVoice;
 let ttsRate = 1;
-function speak(text, anchor, opts) {
-  if (!('speechSynthesis' in window)) { toast('Peramban ini tidak mendukung suara.'); return; }
+/* ===== AUDIO MP3 (rekaman TTS neural) — diputar bila ada filenya, fallback ke suara perangkat ===== */
+let currentAudio = null;
+function audioHash(text) {
+  const t = String(text || '').trim().replace(/\s+/g, ' ');
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return ('0000000' + (h >>> 0).toString(16)).slice(-8);
+}
+function audioURLFor(text) { return 'audio/' + S.lang + '/' + audioHash(text) + '.mp3'; }
+function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} currentAudio = null; } try { speechSynthesis.cancel(); } catch (e) {} }
+// TTS perangkat saja (fallback bila MP3 tidak ada). onEnd dipanggil saat selesai/gagal.
+function speakTTS(text, anchor, opts, onEnd) {
+  if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
   const gender = typeof opts === 'string' ? opts : (opts && opts.gender) || anchor && anchor.dataset && anchor.dataset.gender || '';
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(String(text));
@@ -241,17 +252,62 @@ function speak(text, anchor, opts) {
   if (pick.voice) { try { u.voice = pick.voice; } catch (e) {} }
   u.pitch = gender ? pick.pitch : 1;
   u.rate = ttsRate * (gender ? pick.rate : 1);
-  const pop = $('#tts-pop');
-  pop.innerHTML = '<button data-r="0.7">Lambat</button><button data-r="1">Normal</button><button data-stop="1">Berhenti</button>';
-  const r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { bottom: 70, left: window.innerWidth / 2 - 90 };
-  pop.style.left = Math.max(8, r.left) + 'px'; pop.style.top = (r.bottom + 8) + 'px'; pop.hidden = false;
-  $$('button', pop).forEach(b => b.onclick = () => {
-    if (b.dataset.stop) { speechSynthesis.cancel(); pop.hidden = true; }
-    else { ttsRate = parseFloat(b.dataset.r); speak(text, anchor, gender ? { gender } : undefined); }
-  });
-  u.onend = u.onerror = () => { pop.hidden = true; };
+  u.onend = u.onerror = () => { if (onEnd) onEnd(); };
   speechSynthesis.speak(u);
-  clearTimeout(pop._h); pop._h = setTimeout(() => pop.hidden = true, 6000);
+}
+// Putar satu teks: coba MP3 dulu, fallback ke TTS. Resolve saat selesai.
+function playTextAudio(text, opts) {
+  return new Promise(resolve => {
+    const gender = typeof opts === 'string' ? opts : (opts && opts.gender) || '';
+    stopAudio();
+    const a = new Audio(audioURLFor(text));
+    currentAudio = a;
+    a.playbackRate = ttsRate;
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; if (currentAudio === a) currentAudio = null; resolve(); } };
+    a.onended = done;
+    a.onerror = () => { if (currentAudio === a) currentAudio = null; speakTTS(text, null, gender ? { gender } : undefined, done); };
+    a.play().catch(() => { if (currentAudio === a) currentAudio = null; speakTTS(text, null, gender ? { gender } : undefined, done); });
+  });
+}
+// Putar rangkaian teks berurutan (dialog / listening). items: [{text, gender}]
+function playSequence(items, onDone) {
+  let i = 0;
+  const next = () => {
+    if (i >= items.length) { if (onDone) onDone(); return; }
+    const it = items[i++];
+    playTextAudio(it.text, it.gender ? { gender: it.gender } : undefined).then(() => setTimeout(next, 120));
+  };
+  next();
+}
+function speak(text, anchor, opts) {
+  const gender = typeof opts === 'string' ? opts : (opts && opts.gender) || anchor && anchor.dataset && anchor.dataset.gender || '';
+  stopAudio();
+  const pop = $('#tts-pop');
+  const showPop = () => {
+    pop.innerHTML = '<button data-r="0.7">Lambat</button><button data-r="1">Normal</button><button data-stop="1">Berhenti</button>';
+    const r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { bottom: 70, left: window.innerWidth / 2 - 90 };
+    pop.style.left = Math.max(8, r.left) + 'px'; pop.style.top = (r.bottom + 8) + 'px'; pop.hidden = false;
+    $$('button', pop).forEach(b => b.onclick = () => {
+      if (b.dataset.stop) { stopAudio(); pop.hidden = true; }
+      else { ttsRate = parseFloat(b.dataset.r); if (currentAudio) currentAudio.playbackRate = ttsRate; else speak(text, anchor, gender ? { gender } : undefined); }
+    });
+    clearTimeout(pop._h); pop._h = setTimeout(() => pop.hidden = true, 6000);
+  };
+  // Coba file MP3 dulu (audio neural); bila tidak ada/gagal, pakai TTS perangkat.
+  const a = new Audio(audioURLFor(text));
+  currentAudio = a;
+  a.playbackRate = ttsRate;
+  let fellBack = false;
+  const fallbackTTS = () => {
+    if (fellBack) return; fellBack = true;
+    currentAudio = null;
+    speakTTS(text, anchor, gender ? { gender } : undefined);
+    showPop();
+  };
+  a.onended = () => { currentAudio = null; pop.hidden = true; };
+  a.onerror = fallbackTTS;
+  a.play().then(showPop).catch(fallbackTTS);
 }
 window.speak = speak;
 function ttsBtn(text, label) { return '<button type="button" class="tts-btn" data-speak="' + esc(text) + '">' + (label || '🔊') + '</button>'; }
@@ -292,22 +348,8 @@ function dialogLinesHTML(d) {
   '<div style="margin-top:10px"><button type="button" class="btn white small" data-play-dialog="' + esc(d.title) + '">▶ Putar dialog (suara laki-laki & perempuan bergantian)</button></div>';
 }
 function playDialog(d, anchor) {
-  if (!('speechSynthesis' in window)) { toast('Peramban ini tidak mendukung suara.'); return; }
   const genders = dialogGenders(d);
-  speechSynthesis.cancel();
-  let i = 0;
-  const next = () => {
-    if (i >= d.lines.length) return;
-    const l = d.lines[i++], g = genders[l[0]];
-    const u = new SpeechSynthesisUtterance(String(l[1]));
-    u.lang = LANGMETA[S.lang].tts;
-    const pick = pickDialogVoice(u.lang, g);
-    if (pick.voice) { try { u.voice = pick.voice; } catch (e) {} }
-    u.pitch = pick.pitch; u.rate = ttsRate;
-    u.onend = u.onerror = () => setTimeout(next, 120);
-    speechSynthesis.speak(u);
-  };
-  next();
+  playSequence(d.lines.map(l => ({ text: l[1], gender: genders[l[0]] })));
   if (anchor) toast('Memutar dialog: suara bergantian sesuai pembicara.');
 }
 document.addEventListener('click', e => {
@@ -410,7 +452,7 @@ function renderSidebar() {
     '<div class="userbox"><div class="avatar">' + esc(displayName().slice(0, 1).toUpperCase()) + '</div><div><div class="uname">' + esc(displayName()) + '</div><div class="umail">' + esc(S.user ? S.user.email : 'Mode tamu — data di perangkat ini') + '</div></div></div>' +
     '<div><span class="streak-pill">🔥 <b>' + st.streak + ' hari</b>&nbsp;streak · ' + st.xp + ' XP</span></div></div>' +
     '<nav class="sidebar-nav" aria-label="Menu utama"><div class="side-note">Menu bertingkat: paling atas paling dasar — makin ke bawah, makin mahir.</div>' + items +
-    '<div class="side-version">DidiGo v22 · Tampilan Minimalis</div></nav>';
+    '<div class="side-version">DidiGo v22</div></nav>';
   $$('#sidebar [data-nav]').forEach(b => b.onclick = () => { closeDrawer(); go(b.dataset.nav); });
   const dc = $('#drawer-close'); if (dc) dc.onclick = closeDrawer;
   const lo = $('#logout-btn'); if (lo) lo.onclick = async () => { if (sb) { try { await sb.auth.signOut(); } catch (e) {} } S.user = null; save(); renderSidebar(); renderTopbar(); toast('Sampai jumpa! Kamu sudah keluar.'); go('home'); };
@@ -569,6 +611,7 @@ function bindCrumb(root) { $$('[data-crumb]', root).forEach(a => a.onclick = e =
 /* ===== BERANDA ===== */
 function pageHome(c) {
   const st = LS(), due = totalDue(), nx = nextLesson();
+  const sp = sessProg(), flashDone = due === 0, sessAll = sp.lesson && flashDone && sp.read;
   const todayMin = st.minutes[todayStr()] || 0;
   c.innerHTML = '<div class="wrap">' +
     '<h1 class="page">Halo ' + esc(displayName()) + '. Lanjut belajar ' + LANGMETA[S.lang].name + '?</h1>' +
@@ -581,10 +624,10 @@ function pageHome(c) {
     '<p class="muted" style="margin:6px 0 10px">' + doneCount() + '/42 modul selesai · ' + st.xp + ' XP · 🔥 ' + st.streak + ' hari streak</p>' +
     '<div class="pbar"><i style="width:' + Math.round(doneCount() / 42 * 100) + '%"></i></div></div>' +
     '<div class="sect-label">Sesi hari ini</div>' +
-    '<div class="card"><p class="muted small">Pas dengan target harianmu — modul panjang dipecah per bagian.</p>' +
-    '<div class="today-item"><div class="t"><b>Lanjut modul: ' + esc(nx.title) + ' (' + nx.level + ')</b><span class="muted small">Pelajaran · ±10 menit</span></div><button type="button" class="btn white small" data-go-lesson="' + nx.id + '">Mulai</button></div>' +
-    '<div class="today-item"><div class="t"><b>Review kartu hafalan</b><span class="muted small">' + due + ' kartu jatuh tempo · ±2 menit</span></div><button type="button" class="btn white small" data-nav2="flashcards">Mulai</button></div>' +
-    '<div class="today-item"><div class="t"><b>Bacaan singkat level ' + nx.level + '</b><span class="muted small">±3 menit baca</span></div><button type="button" class="btn white small" data-nav2="readings">Baca</button></div>' +
+    '<div class="card">' + (sessAll ? '<div class="good" style="margin-bottom:12px"><b>✓ Sesi hari ini selesai!</b> Semua bagian sudah dikerjakan. Kerja bagus.</div>' : '<p class="muted small">Pas dengan target harianmu — modul panjang dipecah per bagian.</p>') +
+    '<div class="today-item"><div class="t"><b>Lanjut modul: ' + esc(nx.title) + ' (' + nx.level + ')</b><span class="muted small">Pelajaran · ±10 menit</span></div>' + (sp.lesson ? '<span style="color:var(--green);font-weight:700;white-space:nowrap">✓ Selesai</span>' : '<button type="button" class="btn white small" data-go-lesson="' + nx.id + '">Mulai</button>') + '</div>' +
+    '<div class="today-item"><div class="t"><b>Review kartu hafalan</b><span class="muted small">' + due + ' kartu jatuh tempo · ±2 menit</span></div>' + (flashDone ? '<span style="color:var(--green);font-weight:700;white-space:nowrap">✓ Selesai</span>' : '<button type="button" class="btn white small" data-nav2="flashcards">Mulai</button>') + '</div>' +
+    '<div class="today-item"><div class="t"><b>Bacaan singkat level ' + nx.level + '</b><span class="muted small">±3 menit baca</span></div>' + (sp.read ? '<span style="color:var(--green);font-weight:700;white-space:nowrap">✓ Selesai</span>' : '<button type="button" class="btn white small" data-nav2="readings">Baca</button>') + '</div>' +
     '<button type="button" class="btn big-cta" data-go-lesson="' + nx.id + '">▶ Mulai sesi</button>' +
     '<p class="muted small" style="margin-top:10px;text-align:center">Bisa dilanjut kapan saja lewat menu Sesi Hari Ini.</p></div>' +
     '<div class="grid2" style="margin-top:16px">' +
@@ -600,20 +643,26 @@ function pageHome(c) {
   $$('[data-go-lesson]', c).forEach(b => b.onclick = () => { touchActivity(2); go('lesson', { id: b.dataset.goLesson, part: 0 }); });
   $$('[data-nav2]', c).forEach(b => b.onclick = () => go(b.dataset.nav2));
 }
+/* ===== Progres Sesi Hari Ini (per bahasa, per hari) ===== */
+function sessProg() { const st = LS(); if (!st.session || st.session.date !== todayStr()) return { date: todayStr(), lesson: false, read: false }; return st.session; }
+function sessSet(key) { const st = LS(); if (!st.session || st.session.date !== todayStr()) st.session = { date: todayStr(), lesson: false, read: false }; st.session[key] = true; save(); }
+function sessAllDone() { const s = sessProg(); return s.lesson && totalDue() === 0 && s.read; }
 /* ===== SESI HARI INI ===== */
 function pageSession(c) {
   const nx = nextLesson(), due = totalDue();
+  const sp = sessProg(), flashDone = due === 0, sessAll = sp.lesson && flashDone && sp.read;
   const stats = LS().skillStats || {};
   const weak = Object.keys(stats).filter(t => stats[t].total >= 2 && stats[t].ok / stats[t].total < 0.7).sort((a, b) => (stats[a].ok / stats[a].total) - (stats[b].ok / stats[b].total))[0];
   const weakWhy = weak ? 'Hari ini fokus: <b>' + esc(weak) + '</b>, karena ' + (stats[weak].total - stats[weak].ok) + ' dari ' + stats[weak].total + ' soal ' + esc(weak) + ' terakhir masih salah. Latih lewat Kuis Latihan / Kesalahan Saya di bawah.' : 'Belum ada pola kelemahan yang terbaca — kerjakan kuis beberapa kali, nanti sesi ini menyesuaikan fokusnya dengan kesalahanmu.';
   c.innerHTML = '<div class="wrap"><h1 class="page">Sesi hari ini</h1><p class="sub">Satu sesi pendek ±15 menit. Kerjakan berurutan, atau loncat ke bagian mana pun.</p>' +
+    (sessAll ? '<div class="good" style="margin-top:14px"><b>✓ Sesi hari ini selesai!</b> Semua bagian sudah dikerjakan. Kerja bagus — besok lanjut lagi, atau kerjakan modul berikutnya.</div>' : '') +
     '<div class="card" style="margin-top:14px"><div class="sect-label" style="margin-top:0">Belajar apa hari ini — disesuaikan untukmu</div><p>' + weakWhy + '</p>' + (LS().errLog.length ? '<div class="quiz-actions"><button type="button" class="btn white small" id="sess-myerrors">Latih lagi ' + Math.min(10, LS().errLog.length) + ' kesalahan saya →</button></div>' : '') + '</div>' +
     '<div class="card" style="margin-top:16px">' +
-    [['1', 'Pelajaran — ' + nx.title + ' (' + nx.level + ')', '±10 menit', 'lesson', nx.id],
-     ['2', 'Kuis modul — 6 soal', '±3 menit · minimal 70%', 'quiz', nx.id],
-     ['3', 'Review kartu hafalan', due + ' kartu jatuh tempo · ±2 menit', 'flashcards', ''],
-     ['4', 'Satu bacaan singkat', '±3 menit', 'readings', '']].map(x =>
-      '<div class="today-item"><span class="chip">' + x[0] + '</span><div class="t"><b>' + esc(x[1]) + '</b><span class="muted small">' + x[2] + '</span></div><button type="button" class="btn white small" data-sess="' + x[3] + '" data-id="' + x[4] + '">Mulai</button></div>').join('') +
+    [['1', 'Pelajaran — ' + nx.title + ' (' + nx.level + ')', '±10 menit', 'lesson', nx.id, sp.lesson],
+     ['2', 'Kuis modul — 6 soal', '±3 menit · minimal 70%', 'quiz', nx.id, sp.lesson],
+     ['3', 'Review kartu hafalan', due + ' kartu jatuh tempo · ±2 menit', 'flashcards', '', flashDone],
+     ['4', 'Satu bacaan singkat', '±3 menit', 'readings', '', sp.read]].map(x =>
+      '<div class="today-item"><span class="chip">' + x[0] + '</span><div class="t"><b>' + esc(x[1]) + '</b><span class="muted small">' + x[2] + '</span></div>' + (x[5] ? '<span style="color:var(--green);font-weight:700;white-space:nowrap">✓ Selesai</span>' : '<button type="button" class="btn white small" data-sess="' + x[3] + '" data-id="' + x[4] + '">Mulai</button>') + '</div>').join('') +
     '<p class="muted small" style="margin-top:12px">Progres sesi tersimpan otomatis. Bisa dilanjut kapan saja.</p></div></div>';
   const sme = $('#sess-myerrors', c); if (sme) sme.onclick = () => go('myerrors');
   $$('[data-sess]', c).forEach(b => b.onclick = () => { touchActivity(2); const r = b.dataset.sess; if (r === 'lesson') go('lesson', { id: b.dataset.id, part: 0 }); else if (r === 'quiz') go('quiz', { id: b.dataset.id }); else go(r); });
@@ -911,6 +960,15 @@ function runQuiz(c, cfg) {
   }
   function draw() {
     const q = qs[cur], s = st[cur], total = qs.length;
+    // Audio listening: TOPIK/komockL -> file dialog utuh; JLPT Listening -> passage.
+    let listenKey = null, listenSpeak = null;
+    if (q.prompt && q.prompt.indexOf('[듣기]') === 0) {
+      const banks = [['topik1', DG.topik1], ['topik2', DG.topik2], ['komockL', DG.komockL]];
+      for (const bnBk of banks) { const ix = bnBk[1].findIndex(x => x[0] === q.prompt); if (ix >= 0) { listenKey = bnBk[0] + '_' + ix; break; } }
+    } else if (q.prompt && q.prompt.indexOf('Listening)') !== -1) {
+      const m = q.prompt.match(/^(.+?) — .*Listening\)$/);
+      if (m) listenSpeak = m[1];
+    }
     let inner = '';
     if (q.type === 'mc') {
       inner = '<div class="opt-grid">' + q.options.map((o, i) => {
@@ -940,6 +998,8 @@ function runQuiz(c, cfg) {
       '<div class="quiz-meta"><span class="cnt">' + (cur + 1) + '/' + total + '</span><div class="pbar" style="width:130px;margin:6px 0"><i style="width:' + Math.round((cur + 1) / total * 100) + '%"></i></div><span class="cnt">✓ ' + correctCount() + ' ✗ ' + wrongCount() + '</span>' + (cfg.minutes ? '<span class="cnt" id="sim-timer" style="color:var(--red)">⏱ ' + fmtTime(remain) + '</span>' : '') + '</div></div>' +
       '<div class="card quiz-card"><div style="display:flex;justify-content:space-between;align-items:center"><span class="qtype">' + (q.type === 'mc' ? 'Pilihan ganda' : 'Isi bagian kosong') + '</span><button type="button" class="btn white small" id="q-reset">Reset</button></div>' +
       '<div class="q-context"><span class="q-context-label">Konteks</span> ' + esc(contextForQuestion(q)) + '</div>' +
+      (listenKey ? '<div style="margin:12px 0"><button type="button" class="btn" id="q-listen">▶ Dengarkan percakapan</button> <span class="small muted">Dengarkan dulu, baru jawab.</span></div>' : '') +
+      (listenSpeak ? '<div style="margin:12px 0"><button type="button" class="btn" id="q-listen-spk">🔊 Dengarkan kalimat</button></div>' : '') +
       (q.type === 'mc' ? '<div class="qtext">' + esc(q.prompt) + '</div>' : '') + inner + feedback +
       '<div class="quiz-actions">' +
       (s.submitted || cur > 0 ? '<button type="button" class="btn white" id="q-prev">← Sebelumnya</button>' : '') +
@@ -949,6 +1009,8 @@ function runQuiz(c, cfg) {
       '<div class="quiz-dots">' + qs.map((_, i) => '<button type="button" class="qdot' + (i === cur ? ' cur' : '') + (st[i].submitted ? (st[i].correct ? ' ok' : ' bad') : '') + '" data-dot="' + i + '">' + (i + 1) + '</button>').join('') + '</div>' +
       '<p class="kbd-hint">1–4 pilih jawaban · Enter kirim · ← → pindah soal setelah menjawab</p></div>';
     bindCrumb(c);
+    const lb = $('#q-listen', c); if (lb) lb.onclick = () => { stopAudio(); const au = new Audio('audio/' + S.lang + '/listen_' + listenKey + '.mp3'); currentAudio = au; au.playbackRate = ttsRate; au.play().catch(() => toast('Audio belum tersedia.')); };
+    const lsp = $('#q-listen-spk', c); if (lsp) lsp.onclick = () => speak(listenSpeak, lsp);
     $$('[data-opt]', c).forEach(b => b.onclick = () => { s.sel = +b.dataset.opt; draw(); });
     const fi = $('#fill-in', c); if (fi) { fi.addEventListener('input', () => { s.text = fi.value; const sb2 = $('#q-submit', c); if (sb2) sb2.disabled = s.text.trim() === ''; }); fi.focus(); drawKeyboard($('#vkbd', c), fi); }
     $$('[data-dot]', c).forEach(b => b.onclick = () => { cur = +b.dataset.dot; draw(); });
@@ -1200,15 +1262,16 @@ function pageQuiz(c, p) {
       const passed = pct >= 70;
       const prev = LS().done[les.id] || 0;
       if (passed && pct > prev) { LS().done[les.id] = pct; awardXP(les.id, pct, Math.max(0, Math.round(les.xp * (pct - prev) / 100))); }
+      if (passed) sessSet('lesson');
       save(); renderSidebar();
       cc.innerHTML = '<div class="wrap"><div class="card" style="max-width:640px;margin:30px auto;text-align:center">' +
         '<div class="sect-label">Hasil kuis</div><h1 class="page">' + pct + '%</h1>' +
         '<p class="muted" style="margin:8px 0 4px">' + ok + ' dari ' + total + ' soal benar.</p>' +
         (passed ? '<div class="good" style="text-align:left;margin-top:12px"><b>Lulus!</b> Modul "' + esc(les.title) + '" ditandai selesai. XP ditambahkan lewat jalur resmi.</div>'
           : '<div class="warn" style="text-align:left;margin-top:12px"><b>Belum 70%.</b> Nggak apa-apa — baca lagi bagian kosakatanya, lalu coba lagi.</div>') +
-        '<div class="quiz-actions" style="justify-content:center"><button type="button" class="btn white" id="back-les">Kembali ke pelajaran</button><button type="button" class="btn" id="to-mods">Modul berikutnya →</button></div></div></div>';
+        '<div class="quiz-actions" style="justify-content:center"><button type="button" class="btn white" id="back-les">Kembali ke pelajaran</button><button type="button" class="btn" id="to-mods">' + (passed ? (doneCount() >= lessons().length ? 'Lihat daftar modul →' : 'Lanjut ke pelajaran selanjutnya →') : 'Coba kuis lagi →') + '</button></div></div></div>';
       $('#back-les', cc).onclick = () => go('lesson', { id: les.id, part: 6 });
-      $('#to-mods', cc).onclick = () => go('modules');
+      $('#to-mods', cc).onclick = () => { if (!passed) { go('quiz', { id: les.id }); return; } if (doneCount() >= lessons().length) { go('modules'); return; } const nx2 = nextLesson(); go('lesson', { id: nx2.id, part: 0 }); };
     }
   });
 }
@@ -1354,6 +1417,7 @@ function pageReading(c, p) {
     const fb = $('#rq-fb-' + qi, c);
     if (oi === r.questions[qi][2]) { fb.innerHTML = '<span style="color:var(--green)"><b>Benar!</b></span> <span class="muted">' + esc(r.questions[qi][3]) + '</span>'; bumpSkill('read', 1, 1); awardBonus(1, 'bacaan'); }
     else { bumpSkill('read', 0, 1); fb.innerHTML = '<span style="color:var(--red)"><b>Belum tepat.</b></span> <span class="muted">Coba baca lagi kalimatnya di atas.</span>'; }
+    sessSet('read');
   });
   touchActivity(3);
 }
@@ -1370,13 +1434,13 @@ function pageGrammar(c) {
   const wod = wordOfDay();
   let body = '<div class="card" style="margin-bottom:16px"><div class="sect-label" style="margin-top:0">Kata Hari Ini</div><p style="font-size:19px"><b>' + esc(wod[0]) + '</b> = ' + esc(wod[1]) + ' ' + ttsBtn(wod[0]) + '</p><p class="muted" style="margin-top:4px"><b>' + esc(wod[2]) + '</b> ' + ttsBtn(wod[2]) + '<br>' + esc(wod[3]) + '</p></div>';
   body += '<div class="sect-label">Grammar Pattern per level (A0–C2)</div>' + LEVELS.map(lv => {
-    const rows = ((pats && pats[lv]) || []).map(p => '<tr><td><b>' + esc(p[0]) + '</b></td><td>' + esc(p[1]) + ' ' + ttsBtn(p[1]) + '</td><td>' + esc(p[2]) + '</td><td><button type="button" class="btn white small" data-add-pat="' + esc(p[0]) + '|' + esc(p[1]) + '|' + esc(p[2]) + '">＋ Kartu</button></td></tr>').join('');
+    const rows = ((pats && pats[lv]) || []).map(p => '<tr><td><b>' + esc(p[0]) + '</b></td><td>' + esc(p[1]) + ' ' + ttsBtn(p[1]) + '</td><td>' + esc(p[2]) + '</td><td><button type="button" class="btn white small" data-add-pat="' + esc(p[0]) + '|' + esc(p[1]) + '|' + esc(p[2]) + '">＋ Kartu</button></td></tr>' + (p[3] ? '<tr><td colspan="4"><div class="small" style="line-height:1.6;padding:2px 0"><b>Penjelasan:</b> ' + esc(p[3]) + '</div></td></tr>' : '')).join('');
     return '<div class="card" style="margin-bottom:16px"><b style="font-size:16px">Level ' + lv + '</b><table class="tbl"><tr><th>Pola</th><th>Contoh</th><th>Artinya</th></tr>' + rows + '</table></div>';
   }).join('');
   body += '<div class="sect-label">Catatan Penting (' + (notes ? notes.length : 0) + ' catatan)</div>' + (notes || []).map(n => '<div class="card" style="margin-bottom:12px"><b>' + esc(n[0]) + '</b><p style="margin:6px 0">' + esc(n[1]) + '</p>' + (n[2] || []).map(x => '<div class="sent-line"><b>' + esc(x[0]) + '</b> ' + ttsBtn(x[0]) + '<small>' + esc(x[1]) + '</small></div>').join('') + '</div>').join('');
   body += '<div class="sect-label">Jenis Kata</div>' + (wc || []).map(g => '<div class="card" style="margin-bottom:16px"><b style="font-size:16px">' + esc(g[0]) + '</b><p class="muted" style="margin:5px 0 10px">' + esc(g[1]) + '</p><table class="tbl"><tr><th>Kata</th><th>Arti</th><th>Contoh</th></tr>' + g[2].map(w => '<tr><td><b>' + esc(w[0]) + '</b> ' + ttsBtn(w[0]) + '</td><td>' + esc(w[1]) + '</td><td>' + esc(w[2]) + '<br><span class="muted small">' + esc(w[3]) + '</span></td></tr>').join('') + '</table></div>').join('');
   body += '<div class="sect-label">Latihan Langsung Tata Bahasa</div><div class="card"><p class="muted" style="margin-bottom:10px">Untuk apa: membuktikan pola grammar tiap level langsung dengan soal — bukan teori saja. Pilih levelnya:</p><div class="chiprow">' + LEVELS.map(lv => '<button type="button" class="btn white" data-glat="' + lv + '">Latihan ' + lv + ' →</button>').join('') + '</div></div>';
-  c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Tata Bahasa — ' + LANGMETA[S.lang].name + '</h1><p class="sub">Grammar Pattern bertahap A0–C2, Catatan Penting, Jenis Kata, dan Kata Hari Ini — persis isi web sebelumnya, tampilan v22 Minimalis.</p><div style="margin-top:16px">' + body + '</div></div>';
+  c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Tata Bahasa — ' + LANGMETA[S.lang].name + '</h1><p class="sub">Grammar Pattern bertahap A0–C2, Catatan Penting, Jenis Kata, dan Kata Hari Ini.</p><div style="margin-top:16px">' + body + '</div></div>';
   $$('[data-add-pat]', c).forEach(b => b.onclick = () => { const [p0, p1, p2] = b.dataset.addPat.split('|'); addToSRS([p0, p2, p1, p2], 'pola grammar'); });
   $$('[data-glat]', c).forEach(b => b.onclick = () => {
     const lv = b.dataset.glat;
@@ -1412,7 +1476,7 @@ function pageIdioms(c) {
     const all = idiomTab === 'idiom' ? DG.idioms : DG.phrasal;
     const q = idiomQ.toLowerCase();
     const list = all.filter(x => !q || x[0].toLowerCase().includes(q) || x[1].toLowerCase().includes(q));
-    c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Idiom & Phrasal Verbs — Inggris</h1><p class="sub">' + DG.idioms.length + ' idiom + ' + DG.phrasal.length + ' phrasal verbs = ' + (DG.idioms.length + DG.phrasal.length) + ' ungkapan (isi lengkap web sebelumnya). Cari untuk menyaring.</p>' +
+    c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Idiom & Phrasal Verbs — Inggris</h1><p class="sub">' + DG.idioms.length + ' idiom + ' + DG.phrasal.length + ' phrasal verbs = ' + (DG.idioms.length + DG.phrasal.length) + ' ungkapan. Cari untuk menyaring.</p>' +
       '<div class="tabs"><button type="button" class="tab' + (idiomTab === 'idiom' ? ' active' : '') + '" data-itab="idiom">Idiom (' + DG.idioms.length + ')</button><button type="button" class="tab' + (idiomTab === 'phrasal' ? ' active' : '') + '" data-itab="phrasal">Phrasal Verbs (' + DG.phrasal.length + ')</button></div>' +
       '<div class="searchbox" style="max-width:none;margin-top:14px"><span>🔍</span><input id="idiom-q" type="search" placeholder="Cari ungkapan atau arti…" value="' + esc(idiomQ) + '"></div>' +
       '<p class="small muted" style="margin-top:10px">' + list.length + ' hasil</p><div class="card" style="margin-top:8px;padding:6px 20px">' +
@@ -1498,12 +1562,10 @@ function pageWriting(c) {
   };
   const corr = document.createElement('div');
   corr.className = 'card'; corr.style.marginTop = '14px';
-  corr.innerHTML = '<div class="sect-label" style="margin-top:0">Periksa tulisan saya — koreksi otomatis</div><p class="muted" style="margin-bottom:10px">Untuk apa: memeriksa tata bahasa, pilihan kata, dan ejaan tulisanmu di atas, lalu menunjukkan kalimat perbaikannya + alasan singkat tiap kesalahan.</p><button type="button" class="btn" id="w-check">Periksa tulisan saya</button><div id="w-corr" style="margin-top:12px"></div><p class="small muted" style="margin-top:8px">Koreksi ini berbasis aturan & pola kesalahan umum (termasuk daftar Kesalahan Umum DidiGo) — bukan AI penuh, jadi tetap mungkin ada yang terlewat.</p>';
+  corr.innerHTML = '<div class="sect-label" style="margin-top:0">Periksa tulisan saya — koreksi otomatis</div><p class="muted" style="margin-bottom:10px">Untuk apa: memeriksa tata bahasa, pilihan kata, dan ejaan tulisanmu di atas, lalu menunjukkan kalimat perbaikannya + alasan singkat tiap kesalahan.</p><button type="button" class="btn" id="w-check">Periksa tulisan saya</button><div id="w-corr" style="margin-top:12px"></div><p class="small muted" style="margin-top:8px">Dikoreksi oleh Tutor AI (Gemini) bila tersedia — versi perbaikan + daftar kesalahan + tips. Bila Tutor AI tidak aktif, Mode Privat menyala, atau kuota harian habis, dipakai pemeriksa aturan (pola kesalahan umum).</p>';
   c.querySelector('.wrap').appendChild(corr);
-  $('#w-check', corr).onclick = () => {
-    const t = $('#w-text', c).value;
-    const out = $('#w-corr', corr);
-    if (!t.trim()) { out.innerHTML = '<p class="warn">Tulis dulu kalimatnya di kotak di atas, lalu tekan Periksa.</p>'; return; }
+  // Pemeriksa tulisan berbasis ATURAN (dipakai bila Tutor AI tidak tersedia / mode privat / kuota habis).
+  function ruleCheckWriting(t, out) {
     let fixed = t; const notes = [];
     const RULES = {
       en: [['I am agree', 'I agree', '"agree" adalah kata kerja — tidak perlu "am".'], ['discuss about', 'discuss', '"discuss" langsung diikuti objek, tanpa "about".'], ['I am boring', 'I am bored', 'Perasaan orang memakai bentuk -ed: bored, tired, interested.'], ['more taller', 'taller', 'Kata sifat pendek tidak memakai "more": tall → taller.'], ["didn't went", "didn't go", 'Sesudah "didn\'t" pakai kata kerja dasar: go.'], ['I have 20 years old', 'I am 20 years old', 'Umur memakai "be" (am/is/are), bukan "have".']],
@@ -1519,6 +1581,32 @@ function pageWriting(c) {
     out.innerHTML = notes.length
       ? '<div class="warn"><b>Ditemukan ' + notes.length + ' perbaikan:</b>' + notes.map(n => '<p style="margin-top:5px">• ' + esc(n) + '</p>').join('') + '</div><div class="good" style="margin-top:10px"><b>Versi perbaikannya:</b><p style="margin-top:6px">' + esc(fixed) + '</p></div>'
       : '<div class="good"><b>Bagus!</b> Tidak ditemukan kesalahan pola umum pada tulisanmu. Tetap periksa lagi pilihan katanya ya.</div>';
+  }
+  $('#w-check', corr).onclick = async () => {
+    const t = $('#w-text', c).value;
+    const out = $('#w-corr', corr);
+    if (!t.trim()) { out.innerHTML = '<p class="warn">Tulis dulu kalimatnya di kotak di atas, lalu tekan Periksa.</p>'; return; }
+    // Coba koreksi AI (Tutor) dulu; bila tidak tersedia, pakai pemeriksa aturan.
+    const canAI = !!TUTOR_AI_URL && !S.tutorPrivate;
+    if (canAI) {
+      const today = todayStr();
+      if (S.tutorUsage.day !== today) S.tutorUsage = { day: today, count: 0 };
+      const limit = S.user ? 60 : 20;
+      if (S.tutorUsage.count < limit) {
+        S.tutorUsage.count++; save();
+        out.innerHTML = '<p class="muted">Tutor AI sedang memeriksa tulisanmu…</p>';
+        try {
+          const res = await fetch(TUTOR_AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY }, body: JSON.stringify({ mode: 'correct', message: t.slice(0, 2000), lang: S.lang, level: tutorLevel() }) });
+          const data = await res.json().catch(() => ({}));
+          if (data.reply) {
+            bumpSkill('write', 3, 3);
+            out.innerHTML = '<div class="good" style="margin-top:0">' + md(data.reply) + '</div><p class="small muted" style="margin-top:8px">Dikoreksi oleh Tutor AI. Bila ada yang meragukan, cek lagi di materi Tata Bahasa.</p>';
+            return;
+          }
+        } catch (e) { /* jatuh ke pemeriksa aturan */ }
+      }
+    }
+    ruleCheckWriting(t, out);
   };
   $('#w-script', c).onclick = () => go('script');
 }
@@ -1900,7 +1988,7 @@ function pageExamWriting(c) {
     return;
   }
   if (S.lang === 'ko') {
-    c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Tulis & Esai Ujian — Korea</h1><p class="sub">Persiapan menulis GKS dan TOPIK Writing (KOMOCK_W) — isi lengkap web sebelumnya.</p>' +
+    c.innerHTML = '<div class="wrap wrap-wide"><h1 class="page">Tulis & Esai Ujian — Korea</h1><p class="sub">Persiapan menulis GKS dan TOPIK Writing (KOMOCK_W).</p>' +
       '<div class="card" style="margin-top:16px"><b style="font-size:16px">' + esc(DG.gks.title) + '</b><p style="white-space:pre-line;margin-top:8px">' + esc(DG.gks.body) + '</p></div>' +
       '<div class="sect-label">TOPIK Writing — ' + DG.komockW.length + ' latihan dengan model jawaban</div>' +
       DG.komockW.map((w, i) => '<div class="card" style="margin-top:12px"><b>' + (i + 1) + '. ' + esc(w.prompt) + '</b><div class="contoh-box" style="margin-top:8px"><span class="qtype">Model jawaban</span><p style="margin-top:6px">' + esc(w.model) + '</p></div><p class="small" style="margin-top:8px"><b>Tips:</b> ' + esc(w.tip) + '</p></div>').join('') + '</div>';
@@ -2219,20 +2307,7 @@ function pageListening(c) {
   const items = DG.readings[S.lang];
   let sel = items[0], showTr = true, speed = 1;
   function playAll() {
-    if (!('speechSynthesis' in window)) { toast('Peramban ini tidak mendukung suara.'); return; }
-    speechSynthesis.cancel();
-    let i = 0;
-    const next = () => {
-      if (i >= sel.sentences.length) return;
-      const u = new SpeechSynthesisUtterance(sel.sentences[i][0]);
-      u.lang = LANGMETA[S.lang].tts; u.rate = speed;
-      const pick = pickDialogVoice(u.lang, '');
-      if (pick.voice) { try { u.voice = pick.voice; } catch (e) {} }
-      i++;
-      u.onend = next; u.onerror = next;
-      speechSynthesis.speak(u);
-    };
-    next();
+    playSequence(sel.sentences.map(s2 => ({ text: s2[0], gender: '' })));
   }
   function draw() {
     c.innerHTML = '<div class="wrap"><h1 class="page">Listening — ' + LANGMETA[S.lang].name + '</h1><p class="sub">Untuk apa: melatih telinga dengan bahan asli berjenjang. Dengarkan dulu TANPA transkrip, jawab pertanyaannya, baru buka transkripnya untuk memeriksa.</p>' +

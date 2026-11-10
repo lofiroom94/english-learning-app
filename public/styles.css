@@ -446,6 +446,19 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
   .modules-layout,.lesson-layout{grid-template-columns:1fr}
   .module-grid{grid-template-columns:1fr}
 }
+/* ===== TABLET LANSKAP (1025-1366px): bar atas dipadatkan agar logo profil tidak terpotong ===== */
+@media (min-width:1025px) and (max-width:1366px){
+  #topbar{gap:8px;padding:10px 12px}
+  .tn-btn{padding:10px 10px}
+  .search-wrap{min-width:100px}
+  .lang-btn{padding:7px 8px}
+  .lang-btn .lang-name{display:none}
+}
+/* ===== TABLET LANSKAP SEMPIT (1025-1180px): menu atas jadi laci hamburger agar pasti muat ===== */
+@media (min-width:1025px) and (max-width:1180px){
+  .topnav{display:none}
+  .burger{display:inline-flex}
+}
 /* Tablet landscape tetap 2 kolom rapi, konten tidak melebar berlebihan */
 @media (min-width:641px) and (max-width:1024px){
   .wrap,.wrap-wide{max-width:920px}
