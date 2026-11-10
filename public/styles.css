@@ -27,7 +27,7 @@
   --mono:"JetBrains Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html,body{height:100%;overflow-x:hidden;max-width:100vw}
 body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
@@ -75,7 +75,7 @@ h1.page{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
 .sub{color:var(--ink-2);margin-top:6px;max-width:640px}
 .sect-label{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--red);text-transform:uppercase;margin:22px 0 10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,16px)}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .btn{display:inline-flex;align-items:center;gap:8px;border-radius:var(--btn-radius);border:1px solid var(--ink);background:var(--ink);color:#fff;font-weight:700;font-size:15px;padding:12px 22px}
@@ -243,11 +243,12 @@ table.tbl tr:last-child td{border-bottom:none}
 .kbd-cap{font-size:12px;color:var(--ink-2);align-self:center;font-weight:700}
 .kbd-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
-.char-cell{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 6px;font-size:19px;font-weight:700;text-align:center;color:var(--ink)}
+.char-cell{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 6px;font-size:clamp(16px,3vw,20px);font-weight:700;text-align:center;color:var(--ink)}
 .char-cell small{display:block;font-size:11px;color:var(--ink-2);font-weight:600;margin-top:3px;line-height:1.35}
 .stroke-anim{display:inline-block;font-size:24px;animation:strokePulse 1.6s ease-in-out infinite}
 @keyframes strokePulse{0%,100%{opacity:.45;transform:translate(0,0)}50%{opacity:1;transform:translate(1px,1px)}}
 #bottomnav{display:none}
+.bn-item{min-width:0}
 html,body{overflow-x:hidden;max-width:100vw}
 .shell{max-width:100vw}
 #content{background:var(--bg);overflow-x:hidden}
@@ -337,7 +338,7 @@ img,svg,table{max-width:100%}
 .script-big{font-size:84px;font-weight:800;line-height:1.05;padding:14px 22px;background:var(--pink);border-radius:16px;color:var(--ink)}
 .char-cell.active{outline:2px solid var(--red);background:var(--pink)}
 .gojuon td{padding:4px}
-.goju-cell{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 4px;font-size:17px;color:var(--ink);cursor:pointer}
+.goju-cell{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 4px;font-size:clamp(15px,3vw,18px);color:var(--ink);cursor:pointer}
 .goju-cell small{display:block;font-size:11px;color:var(--ink-2);font-weight:600}
 .goju-cell span{color:var(--ink-2);font-size:14px}
 .goju-cell.active{outline:2px solid var(--red);background:var(--pink)}
@@ -385,8 +386,8 @@ img,svg,table{max-width:100%}
 [data-theme="dark"] .fill-input{background:var(--card)}
 /* ===== Cangkang kolom: bar atas diam, konten scroll ===== */
 .shell{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;max-width:100vw}
-#topbar{position:relative;z-index:65;flex:none;display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:nowrap}
-#content{flex:1;overflow-y:auto;overflow-x:hidden;padding:26px 24px 64px;scroll-behavior:smooth}
+#topbar{position:relative;z-index:65;flex:none;display:flex;align-items:center;gap:clamp(8px,1.5vw,12px);padding:clamp(8px,1.5vw,10px) clamp(10px,2vw,20px);background:var(--card);border-bottom:1px solid var(--line);flex-wrap:nowrap}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;padding:clamp(18px,3vw,26px) clamp(14px,3vw,24px) 64px;scroll-behavior:smooth}
 .wrap{max-width:1080px;margin:0 auto}
 .wrap-wide{max-width:1120px}
 /* ===== Laci (semua lebar: hanya tampil saat dibuka dari ☰) ===== */
@@ -396,7 +397,7 @@ img,svg,table{max-width:100%}
 .drawer-close{flex:none;width:44px;height:44px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;font-size:16px;font-weight:800}
 #drawer-backdrop{z-index:85}
 /* ===== Navigasi atas ===== */
-.logo{font-size:23px;padding:2px 4px}
+.logo{font-size:clamp(18px,2.5vw,23px);padding:2px 4px}
 .logo-btn{background:none;border:none;color:var(--ink);cursor:pointer;flex:none}
 .topnav{display:flex;align-items:center;gap:2px;flex:none}
 .tn-group{position:relative}
@@ -425,7 +426,7 @@ img,svg,table{max-width:100%}
 .lang-picker{flex:none;margin-left:0}
 
 /* ===== Proporsional: skala konsisten di semua lebar ===== */
-.card{border-radius:var(--radius);padding:22px}
+.card{border-radius:var(--radius);padding:clamp(16px,2.5vw,22px)}
 h1.page{font-size:clamp(24px,3.4vw,32px)}
 .grid2,.grid3,.grid4{gap:18px}
 #version-badge{bottom:18px;right:18px;pointer-events:none}
@@ -451,15 +452,16 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
 }
 /* ===== HP (≤640px): 1 kolom, 1 baris bar atas, tanpa scroll mendatar ===== */
 @media (max-width:640px){
-  #topbar{gap:6px;padding:8px 8px}
-  .logo{font-size:19px}
+  #topbar{gap:4px;padding:8px 6px}
+  .logo{font-size:18px}
+  .burger{padding:8px 8px}
   .search-wrap{display:none;min-width:0}
   #topbar.search-open .search-wrap{display:block;position:absolute;top:100%;left:0;right:0;padding:10px 12px 12px;background:var(--card);border-bottom:1px solid var(--line);z-index:70;max-width:none}
   #topbar.search-open .searchbox{max-width:none}
   .search-toggle{display:inline-flex}
   .searchbox{padding:8px 11px}
   .searchbox input{font-size:14px}
-  .lang-btn{padding:8px 9px;font-size:12px;min-height:44px}
+  .lang-btn{padding:7px 7px;font-size:12px;min-height:44px}
   .lang-btn .lang-name{display:none}
   .theme-btn{width:40px;height:40px}
   .search-toggle{width:40px;height:40px}
@@ -467,8 +469,7 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
   #content{padding:18px 14px 132px}
   .grid2,.grid3,.grid4,.opt-grid{grid-template-columns:1fr}
   .rate-grid{grid-template-columns:1fr 1fr}
-  .card{padding:17px}
-  h1.page{font-size:24px}
+  .card{padding:clamp(14px,3vw,18px)}
   #version-badge{display:none}
   #bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:2px}
   .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;border-radius:12px;padding:7px 2px;font-size:11px;font-weight:700;color:var(--ink-2);min-height:52px}
@@ -476,6 +477,10 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
   .srs-strip{flex-direction:column;align-items:flex-start}
   canvas,.write-canvas{max-width:100%}
   .kbd-key{min-width:44px;min-height:48px}
+}
+/* HP sangat sempit (≤400px): label nav bawah sedikit lebih kecil supaya tetap 1 baris */
+@media (max-width:400px){
+  .bn-item{font-size:10px}
 }
 /* HP landscape: ruang bawah lebih ramping, bottom-nav tetap tidak menutupi */
 @media (max-width:900px) and (orientation:landscape){
@@ -493,3 +498,7 @@ h1.page{font-size:clamp(24px,3.4vw,32px)}
 @media (min-width:1025px){
   #bottomnav{display:none}
 }
+
+/* ===== FLUID & GERAKAN DINAMIS: ukuran mengikuti lebar layar, tema berganti halus ===== */
+.bn-item{font-size:clamp(10px,2.5vw,11px)}
+body,#topbar,#sidebar,#bottomnav,.card,.searchbox,.lang-btn,.theme-btn{transition:background-color .3s ease,color .3s ease,border-color .3s ease}
